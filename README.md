@@ -1,4 +1,4 @@
-# Grid 3.0 by Flipkart by team Monokrome
+# Flipkart Grid 3.0 by team Monokrome
 
 ## Documentation
 
