@@ -1,10 +1,10 @@
-# grid-3-0
+# Flipkart Grid 3.0 by team Monokrome
 
 ## Documentation
 
 ## Folder Structure
 ```
-├── Bot-code        Platform IO bassed arduino framework project
+├── Bot-code        Platform IO based arduino framework project
 ├── ML-OpenCV       ML and Open CV object tracking project files
 ├── MQTT-Broker     MQTT Broker source code
 └── README.md       Contains all the details about the project
