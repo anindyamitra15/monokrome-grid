@@ -1,10 +1,11 @@
 #include <Arduino.h>
+#include<WiFiManager.h>
 #include <ArduinoMqttClient.h>
 #include "config.h"
 #include "PINS.h"
 
 /*====Function Prototypes======*/
-bool stop(int magnitude);
+bool stop(void);
 bool forward(int magnitude);
 
 void setup() {
@@ -17,7 +18,7 @@ void loop() {
 
 /*====Function Definitions======*/
 //The bot (all the motors) stop when this function is called
-bool stop(int magnitude)
+bool stop(void)
 {
   //logic to set motor outputs to 0
   return true;
@@ -25,6 +26,6 @@ bool stop(int magnitude)
 //Motor moves forward with magnitude cm/s speed
 bool forward(int magnitude)
 {
-  
+  //logic to set the PWM from the magnitude and to move the bot forward
   return true;
 }
