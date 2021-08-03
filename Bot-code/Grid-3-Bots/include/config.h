@@ -4,7 +4,7 @@
 // the IP address of the main Computer
 #define broker "192.168.0.5"
 // the PORT for MQTT
-#define port 1883
+#define mqtt_port 1883
 
 /**
  * WiFi credentials
