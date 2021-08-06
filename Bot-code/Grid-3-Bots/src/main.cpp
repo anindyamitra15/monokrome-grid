@@ -6,40 +6,22 @@
 #include "PINS.h"
 
 /*=============MACROS==============*/
+#define BAUD 115200
 #define SPEED_MAX 1000
 #define SPEED_MIN 0
 #define PWM_MAX 1023
 #define PWM_MIN 0
 #define ROTATION_SPEED 100
 #define SERVO_HIGHEST_DEGREE 90
-#define BOT_CONTROL_TOPIC "Bot"
+#define BOT_CONTROL_TOPIC "ToBot"
+#define BOT_PUBLISH_TOPIC "FromBot"
 #define set_A_PWM(pwm) \
   analogWrite(A_PWM, pwm);
 #define set_B_PWM(pwm) \
   analogWrite(B_PWM, pwm);
-/*==============Function Prototypes====================*/
-void io_init(void);
-void mqtt_init(void);
-void wifi_init(void);
-
-bool stop(void);
-bool forward(int magnitude);
-bool reverse(int magnitude);
-bool turn (int direction, int degree);
-void unload(void);
-bool rotate(void);
-
-bool subscribe_to_pc(void);
-
-
-bool setDirection(uint8_t dir);
-void setMotorDir(bool In1, bool In2, bool In3, bool In4);
-uint16_t calculate_pwm_from_speed(int speed);
-void configModeCallback(WiFiManager *wifi);
-void messageHandler(int messageSize);
 
 /*=======Globals=======*/
-enum commands
+typedef enum commands
 {
   Stop,
   Forward,
@@ -48,7 +30,8 @@ enum commands
   Right_Turn,
   Unload,
   Rotate_180
-};
+}command;
+
 /** Enum for valid directions
  * NN = No direction/Stop
  * FF = Both motors forward
@@ -56,24 +39,50 @@ enum commands
  * FR = Left motor forward, right motor reverse (turn right)
  * RF = Left motor reverse, right motor forward (turn left)
 */
-enum directions{NN, FF, RR, RF, FR};
+typedef enum directions{NN, FF, RR, RF, FR} direction;
 const unsigned long us_per_degree = 1000;  //when motors rotate with 100cm/s
 const unsigned long servo_unload_timing_ms = 500;
 Servo unloader; //unloader servo object
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
+/*==============Function Prototypes====================*/
+void io_init(void);
+void mqtt_init(void);
+void wifi_init(void);
+
+bool stop(void);
+bool forward(int magnitude);
+bool reverse(int magnitude);
+bool turn(command direction, int degree);
+void unload(void);
+bool rotate(void);
+
+bool publishChipId(void);
+bool publishError(void);
+bool subscribe_to_pc(void);
+
+bool setDirection(direction dir);
+direction interpret_direction(command);
+void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
+uint16_t calculate_pwm_from_speed(unsigned int speed);
+void configModeCallback(WiFiManager *wifi);
+void commandHandler(int messageSize);
+void magnitudeChangeHandler(int messageSize);
+
 void setup() {
+  Serial.begin(BAUD);
   io_init();
   stop();
   mqtt_init();
   wifi_init();
   subscribe_to_pc();
-  mqttClient.onMessage(messageHandler);
+  //mqttClient.onMessage(commandHandler);
 }
 
 void loop() {
   mqttClient.poll();
+  
 }
 
 /*====Function Definitions======*/
@@ -124,13 +133,13 @@ bool reverse(int magnitude)
  * \param degree (degree of rotation)
  * \return true on success
 */
-bool turn(int direction, int degree)
+bool turn(command cmd, int degree)
 {
   bool flag = true;
   flag &= stop();
   set_A_PWM(calculate_pwm_from_speed(ROTATION_SPEED));
   set_B_PWM(calculate_pwm_from_speed(ROTATION_SPEED));
-  flag &= setDirection(direction);
+  flag &= setDirection(interpret_direction(cmd));
   delayMicroseconds(degree * us_per_degree);
   flag &= stop();
   return flag;
@@ -174,6 +183,7 @@ void io_init(void)
 }
 /**
  * MQTT initialising function
+ * //TODO - debug
 */
 void mqtt_init()
 {
@@ -220,53 +230,87 @@ void wifi_init()
     }
   }
 }
+
+/**
+ * publishes the chipId on first connection
+ * and retains the message
+ * //TODO
+ */
+bool publishChipId(void)
+{
+  String topic = BOT_PUBLISH_TOPIC;
+  topic += "/Botlist";
+  return false;
+}
+
 /**
  * Function to subscribe to
  * 1. Command
  * 2. Magnitude
  * topics
+ * //TODO
 */
 bool subscribe_to_pc(void)
 {
-  String topic = BOT_CONTROL_TOPIC + ESP.getChipId();
-  int ec = mqttClient.subscribe(topic + "Command");
-  ec += mqttClient.subscribe(topic + "Magnitude");
-  return (ec == 0);
+  String topic = BOT_CONTROL_TOPIC + '/' +ESP.getChipId();
+  int ec = mqttClient.subscribe(topic + "/+");
+  return (ec == MQTT_SUCCESS);
 }
 
-void messageHandler(int messageSize)
+void commandHandler(int messageSize)
 {
+  //TODO
+  String msg = mqttClient.messageTopic();
+}
+void magnitudeChangeHandler(int messageSize)
+{
+  //TODO
   String msg = mqttClient.messageTopic();
 }
 
 /*=============Lower level functions============*/
 
 /**
+ * This functions takes in command and interprets the direction
+ * \param command: typedef enum commands
+ * \return direction (typedef enum directions)
+ */
+direction interpret_direction(command c)
+{
+  if(c == Left_Turn)
+    return RF;
+  if(c == Right_Turn)
+    return FR;
+  return NN;
+}
+
+/**
  * Set Direction from enum directions
- * \param dir (direction) 0 to 4,
+ * \param direction: 0 to 4,
  * NN = No direction/Stop,
  * FF = Both motors forward,
  * RR = Both motors reverse,
  * FR = Left motor forward, right motor reverse (turn right),
  * RF = Left motor reverse, right motor forward (turn left)
+ * \return true on success
 */
-bool setDirection(uint8_t dir)
+bool setDirection(direction dir)
 {
   switch (dir)
   {
   case NN:
-    setMotorDir(LOW, LOW,   LOW, LOW);
+    setMotorsDir(LOW, LOW,   LOW, LOW);
   case FF:
-    setMotorDir(HIGH, LOW, HIGH, LOW);
+    setMotorsDir(HIGH, LOW, HIGH, LOW);
     break;
   case RR:
-    setMotorDir(LOW, HIGH, LOW, HIGH);
+    setMotorsDir(LOW, HIGH, LOW, HIGH);
     break;
   case RF:
-    setMotorDir(LOW, HIGH, HIGH, LOW);
+    setMotorsDir(LOW, HIGH, HIGH, LOW);
     break;
   case FR:
-    setMotorDir(HIGH, LOW, LOW, HIGH);
+    setMotorsDir(HIGH, LOW, LOW, HIGH);
     break;
   default:
     return false; //returns false on wrong input
@@ -275,13 +319,13 @@ bool setDirection(uint8_t dir)
 }
 
 /**
- * set motor directions directly
+ * set motors' direction directly/logically
  * \param In1 Boolean Logic for In1
  * \param In2 Boolean Logic for In2
  * \param In3 Boolean Logic for In3
  * \param In4 Boolean Logic for In4
 */
-void setMotorDir(bool In1, bool In2, bool In3, bool In4)
+void setMotorsDir(bool In1, bool In2, bool In3, bool In4)
 {
   digitalWrite(A_PLUS, In1);
   digitalWrite(A_MINUS,In2);
@@ -299,6 +343,9 @@ uint16_t calculate_pwm_from_speed(unsigned int speed)
   return map(speed, SPEED_MIN, SPEED_MAX, PWM_MIN, PWM_MAX);
 }
 
+/**
+ * used only by WiFiManager
+ */
 void configModeCallback(WiFiManager *wifi)
 {
   Serial.println("Entered config mode: ");
