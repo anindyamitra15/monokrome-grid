@@ -77,8 +77,8 @@ void setup() {
   stop();
   wifi_init();
   mqtt_init();
-  subscribe_to_pc();
-  //mqttClient.onMessage(commandHandler);
+  Serial.printf("%s\n", subscribe_to_pc()?"subscribed":"not subscribed");
+  mqttClient.onMessage(commandHandler);
 }
 
 void loop() {
@@ -211,7 +211,8 @@ void wifi_init()
   wifi.setDebugOutput(false);
   wifi.setTimeout(300);
   wifi.setAPCallback(configModeCallback);
-  String ap_name = "MQTTBot_" + ESP.getChipId();
+  uint32_t id = ESP.getChipId();
+  String ap_name = "MQTTBot_" + id;
   if (!wifi.autoConnect(ap_name.c_str(), "12345678"))
   {
     Serial.println("Couldn't Connect to remote AP");
@@ -230,6 +231,7 @@ void wifi_init()
       delay(200);
     }
   }
+  Serial.println(id);
 }
 
 /**
@@ -253,20 +255,30 @@ bool publishChipId(void)
 */
 bool subscribe_to_pc(void)
 {
-  String topic = BOT_CONTROL_TOPIC + '/' +ESP.getChipId();
-  int ec = mqttClient.subscribe(topic + "/+");
-  return (ec == MQTT_SUCCESS);
+  String topic = BOT_CONTROL_TOPIC ;
+  topic += '/';
+  topic += ESP.getChipId();
+  topic += "/+";
+  Serial.print("Subscribing to topics: ");
+  Serial.println(topic);
+  int ec = mqttClient.subscribe(topic);
+  Serial.println(ec);
+  return (ec);
 }
 
 void commandHandler(int messageSize)
 {
   //TODO
   String msg = mqttClient.messageTopic();
+  Serial.println(msg);
+
 }
 void magnitudeChangeHandler(int messageSize)
 {
-  //TODO
-  String msg = mqttClient.messageTopic();
+  //TODO - complete the message handler for ./Commands and ./Magnitude
+  String msgTopic = mqttClient.messageTopic();
+  int size = mqttClient.parseMessage();
+
 }
 
 /*=============Lower level functions============*/
