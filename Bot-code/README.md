@@ -3,12 +3,12 @@ This folder contains all the source codes required for the microcontroller in th
 ## Folder Structure
 ```
 ├── Grid-3-Bots     Platform IO Source Folder
-    ├── include     Contains header files for the source code
-    ├── libs        Contains all the custom libraries (if any)
-    ├── src
-    |   └── main.cpp    This is the source code
-    ├── .gitignore      You know what it is :)
-    ├── platformio.ini  contains board setting, libraries and other configurations
+|   ├── include     Contains header files for the source code
+|   ├── libs        Contains all the custom libraries (if any)
+|   ├── src
+|   |   └── main.cpp    This is the source code
+|   ├── .gitignore      You know what it is :)
+|   ├── platformio.ini  contains board setting, libraries and other configurations
 └── README.md       Contains all the details about the project
 ```
 
