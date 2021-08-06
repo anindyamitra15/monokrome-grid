@@ -72,10 +72,11 @@ void magnitudeChangeHandler(int messageSize);
 
 void setup() {
   Serial.begin(BAUD);
+  Serial.setDebugOutput(true);
   io_init();
   stop();
-  mqtt_init();
   wifi_init();
+  mqtt_init();
   subscribe_to_pc();
   //mqttClient.onMessage(commandHandler);
 }
