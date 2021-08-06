@@ -7,14 +7,21 @@
 
 /*=============MACROS==============*/
 #define BAUD 115200
+
 #define SPEED_MAX 1000
 #define SPEED_MIN 0
+
 #define PWM_MAX 1023
 #define PWM_MIN 0
+
 #define ROTATION_SPEED 100
 #define SERVO_HIGHEST_DEGREE 90
 #define BOT_CONTROL_TOPIC "ToBot"
 #define BOT_PUBLISH_TOPIC "FromBot"
+#define SUBTOPIC_CMD "/Command"
+#define SUBTOPIC_MAG "/Magnitude"
+
+//macro functions
 #define set_A_PWM(pwm) \
   analogWrite(A_PWM, pwm);
 #define set_B_PWM(pwm) \
@@ -45,6 +52,8 @@ const unsigned long servo_unload_timing_ms = 500;
 Servo unloader; //unloader servo object
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
+String commandTopic = "";
+String magnitudeTopic = "";
 
 /*==============Function Prototypes====================*/
 void io_init(void);
@@ -67,9 +76,11 @@ direction interpret_direction(command);
 void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
 uint16_t calculate_pwm_from_speed(unsigned int speed);
 void configModeCallback(WiFiManager *wifi);
-void commandHandler(int messageSize);
-void magnitudeChangeHandler(int messageSize);
+void mqttMessageHandler(int messageSize);
+void commandHandler(String msg);
+void magnitudeChangeHandler(String msg);
 
+/*=========Setup=========*/
 void setup() {
   Serial.begin(BAUD);
   Serial.setDebugOutput(true);
@@ -77,14 +88,27 @@ void setup() {
   stop();
   wifi_init();
   mqtt_init();
+  commandTopic = BOT_CONTROL_TOPIC;
+  commandTopic += "/";
+  commandTopic += ESP.getChipId();
+  commandTopic += SUBTOPIC_CMD;
+  Serial.println(commandTopic);
+  magnitudeTopic = BOT_CONTROL_TOPIC;
+  magnitudeTopic += "/";
+  magnitudeTopic += ESP.getChipId();
+  magnitudeTopic += SUBTOPIC_MAG;
+  Serial.println(magnitudeTopic);
   Serial.printf("%s\n", subscribe_to_pc()?"subscribed":"not subscribed");
-  mqttClient.onMessage(commandHandler);
+  mqttClient.onMessage(mqttMessageHandler);
 }
+/*=========Setup=========*/
 
+/*=========Loop=========*/
 void loop() {
   mqttClient.poll();
   
 }
+/*=========Loop=========*/
 
 /*====Function Definitions======*/
 
@@ -180,6 +204,7 @@ void io_init(void)
   pinMode(B_MINUS, OUTPUT);
   pinMode(A_PWM, OUTPUT);
   pinMode(B_PWM, OUTPUT);
+  analogWriteFreq(PWM_FREQ);
   unloader.attach(SERVO_PIN);
 }
 /**
@@ -255,7 +280,7 @@ bool publishChipId(void)
 */
 bool subscribe_to_pc(void)
 {
-  String topic = BOT_CONTROL_TOPIC ;
+  String topic = BOT_CONTROL_TOPIC;
   topic += '/';
   topic += ESP.getChipId();
   topic += "/+";
@@ -266,19 +291,29 @@ bool subscribe_to_pc(void)
   return (ec);
 }
 
-void commandHandler(int messageSize)
+void mqttMessageHandler(int messageSize)
+{
+  String msgTopic = mqttClient.messageTopic();
+  Serial.println(msgTopic);
+  String msg = mqttClient.readString();
+  Serial.println(msg);
+  if(msgTopic.equals(commandTopic));
+    commandHandler(msg);
+  if(msgTopic.equals(magnitudeTopic))
+    magnitudeChangeHandler(msg);
+}
+void commandHandler(String msg)
 {
   //TODO
-  String msg = mqttClient.messageTopic();
+  Serial.print("Command received: ");
   Serial.println(msg);
-
+  
 }
-void magnitudeChangeHandler(int messageSize)
+void magnitudeChangeHandler(String msg)
 {
-  //TODO - complete the message handler for ./Commands and ./Magnitude
-  String msgTopic = mqttClient.messageTopic();
-  int size = mqttClient.parseMessage();
-
+  //TODO
+  Serial.print("Magnitude received: ");
+  Serial.println(msg);
 }
 
 /*=============Lower level functions============*/

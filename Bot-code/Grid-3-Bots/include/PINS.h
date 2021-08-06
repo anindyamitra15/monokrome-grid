@@ -1,8 +1,13 @@
 /**
- * PWM for Speed
- * PWM frequency 1kHz
- * 8-bit speed control
+ * 10-bit speed control
 */
+
+/**
+ * PWM frequency can be adjusted on ESP core for Arduino
+ * Minimum frequency = 100Hz
+ * Maximum frequency = 60kHz
+ */
+#define PWM_FREQ 200
 /*MOTOR A*/
 //Left Motor PWM
 #define A_PWM 12
