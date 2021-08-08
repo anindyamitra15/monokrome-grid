@@ -307,12 +307,25 @@ void mqttMessageHandler(int messageSize)
   Serial.printf("\n%s\n",msgTopic.c_str());
   String msg = mqttClient.readString();
   if(msgTopic.equals(topic.command))
-    bot_command = commandChangeHandler(msg);  //update the command value
-  if(msgTopic.equals(topic.magnitude))
-    bot_magnitude = magnitudeChangeHandler(msg);  //update the magnitude value
-  controlHandler();
+  {
+    bot_command = commandChangeHandler(msg); //update the command value
+    controlHandler();
+  }
+  else if(msgTopic.equals(topic.magnitude))
+  {
+    bot_magnitude = magnitudeChangeHandler(msg); //update the magnitude value
+    controlHandler();
+  }
+  else
+    Serial.println("Invalid subtopic :3");
+  
 }
 
+/**
+ * Handles the changed command
+ * \param message as String
+ * \return command which is to be updated by programmer
+ */
 command commandChangeHandler(String msg)
 {
   //debug code section
@@ -328,6 +341,11 @@ command commandChangeHandler(String msg)
   return (command)cmd;  //return the new command
 }
 
+/**
+ * Handles the changed magnitude
+ * \param message as String
+ * \return magnitude as integer which is to be updated by programmer
+ */
 unsigned int magnitudeChangeHandler(String msg)
 {
   //debug code section
@@ -343,6 +361,11 @@ unsigned int magnitudeChangeHandler(String msg)
   return mag;
 }
 
+/**
+ * Controls the bot whenever the function is called
+ * with the current command (global)bot_command
+ * and the current magnitude (global)bot_magnitude
+ */
 void controlHandler(void)
 {
   switch (bot_command)
@@ -352,11 +375,11 @@ void controlHandler(void)
     stop();
     break;
   case Forward:
-    Serial.println("Bot moves forward");
+    Serial.printf("Bot moves forward at %u cm/s\n", bot_magnitude);
     forward(bot_magnitude);
     break;
   case Reverse:
-    Serial.println("Bot moves reverse");
+    Serial.printf("Bot moves reverse at %u cm/s\n", bot_magnitude);
     reverse(bot_magnitude);
     break;
   case Left_Turn:
