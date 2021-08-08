@@ -246,6 +246,8 @@ void wifi_init()
   wifi.setTimeout(300);
   wifi.setAPCallback(configModeCallback);
   uint32_t id = ESP.getChipId();
+  Serial.print("Chip ID: ");
+  Serial.println(id);
   String ap_name = "MQTTBot_" + id;
   if (!wifi.autoConnect(ap_name.c_str(), "12345678"))
   {
@@ -265,8 +267,7 @@ void wifi_init()
       delay(200);
     }
   }
-  Serial.print("Chip ID: ");
-  Serial.println(id);
+  
 }
 
 /**
