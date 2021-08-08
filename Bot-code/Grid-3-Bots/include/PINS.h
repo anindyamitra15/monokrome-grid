@@ -25,7 +25,7 @@
 
 /*MOTOR B*/
 //Out3 connects to Right Motor +ve
-#define B_PLUS 16 //connects to In3
+#define B_PLUS 0 //connects to In3
 //Out4 connects to Right Motor -ve
 #define B_MINUS 14 //connects to In4
 

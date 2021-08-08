@@ -2,7 +2,7 @@
  * All sensitive secrets are stored in this file
 */
 // the IP address of the main Computer
-#define broker "test.mosquitto.org"
+#define broker "192.168.0.12"
 // the PORT for MQTT
 #define mqtt_port 1883
 
@@ -10,5 +10,5 @@
  * WiFi credentials
  * Optional
  */
-//#define SSID "MQTTBot"
+//#define SSID "MQTTBot_BotNumber"
 //#define PASS "12345678"

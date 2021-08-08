@@ -6,7 +6,7 @@
 #include "PINS.h"
 
 /*=============MACROS==============*/
-#define BAUD 115200
+#define BAUD 76800
 
 #define SPEED_MAX 1000
 #define SPEED_MIN 0
@@ -26,9 +26,11 @@
   analogWrite(A_PWM, pwm);
 #define set_B_PWM(pwm) \
   analogWrite(B_PWM, pwm);
+#define SLASH String('/')
 
 /*=======Globals=======*/
-typedef enum commands
+
+typedef enum command
 {
   Stop,
   Forward,
@@ -46,18 +48,19 @@ typedef enum commands
  * FR = Left motor forward, right motor reverse (turn right)
  * RF = Left motor reverse, right motor forward (turn left)
 */
-typedef enum directions{NN, FF, RR, RF, FR} direction;
+typedef enum direction{NN, FF, RR, RF, FR} direction;
 typedef struct topics
 {
-  String command = "";
-  String magnitude = "";
+  String parentTopic;
+  String command;
+  String magnitude;
 } topics;
 const unsigned long us_per_degree = 1000;  //when motors rotate with 100cm/s
 const unsigned long servo_unload_timing_ms = 500;
 Servo unloader; //unloader servo object
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
-topics topic;
+topics subtopic;
 
 
 command bot_command = Stop;
@@ -68,6 +71,7 @@ unsigned int bot_magnitude = 0;
 void io_init(void);
 void mqtt_init(void);
 void wifi_init(void);
+void topics_init(void);
 
 bool stop(void);
 bool forward(int magnitude);
@@ -80,12 +84,12 @@ bool publishChipId(void);
 bool publishError(void);
 bool subscribe_to_pc(void);
 
-bool setDirection(direction dir);
 direction interpret_direction(command);
+bool setDirection(direction dir);
 void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
 uint16_t calculate_pwm_from_speed(unsigned int speed);
-void configModeCallback(WiFiManager *wifi);
 
+void configModeCallback(WiFiManager *wifi);
 void mqttMessageHandler(int messageSize);
 command commandChangeHandler(String msg);
 unsigned int magnitudeChangeHandler(String msg);
@@ -99,16 +103,7 @@ void setup() {
   stop();
   wifi_init();
   mqtt_init();
-  topic.command = BOT_CONTROL_TOPIC;
-  topic.command += "/";
-  topic.command += ESP.getChipId();
-  topic.command += SUBTOPIC_CMD;
-  Serial.println(topic.command);
-  topic.magnitude = BOT_CONTROL_TOPIC;
-  topic.magnitude += "/";
-  topic.magnitude += ESP.getChipId();
-  topic.magnitude += SUBTOPIC_MAG;
-  Serial.println(topic.magnitude);
+  topics_init();
   Serial.printf("%s\n", subscribe_to_pc()?"subscribed":"not subscribed");
   mqttClient.onMessage(mqttMessageHandler);
 }
@@ -217,6 +212,7 @@ void io_init(void)
   analogWriteFreq(PWM_FREQ);
   unloader.attach(SERVO_PIN);
 }
+
 /**
  * MQTT initialising function
  * //TODO - debug
@@ -238,7 +234,7 @@ void mqtt_init()
  * Uses WiFiManager to connect to AP
  * if AP is not found, ESP will become an AP
  * where you can put wifi credentials on
- * 192.168.1.1
+ * 192.168.4.1
 */
 void wifi_init()
 {
@@ -247,9 +243,9 @@ void wifi_init()
   wifi.setTimeout(300);
   wifi.setAPCallback(configModeCallback);
   uint32_t id = ESP.getChipId();
-  Serial.print("Chip ID: ");
+  Serial.print("\n\nChip ID: ");
   Serial.println(id);
-  String ap_name = "MQTTBot_" + id;
+  String ap_name = "MQTTBot_" + String(id);
   if (!wifi.autoConnect(ap_name.c_str(), "12345678"))
   {
     Serial.println("Couldn't Connect to remote AP");
@@ -283,6 +279,15 @@ bool publishChipId(void)
   return false;
 }
 
+void topics_init(void)
+{
+  subtopic.parentTopic = BOT_CONTROL_TOPIC + SLASH + String(ESP.getChipId());
+  subtopic.command = subtopic.parentTopic + SUBTOPIC_CMD;
+  subtopic.magnitude = subtopic.parentTopic + SUBTOPIC_MAG;
+  Serial.println(subtopic.command);
+  Serial.println(subtopic.magnitude);
+}
+
 /**
  * Function to subscribe to
  * 1. Command
@@ -292,10 +297,7 @@ bool publishChipId(void)
 */
 bool subscribe_to_pc(void)
 {
-  String topic = BOT_CONTROL_TOPIC;
-  topic += '/';
-  topic += ESP.getChipId();
-  topic += "/+";
+  String topic = subtopic.parentTopic + SLASH + '+';
   Serial.print("Subscribing to topics: ");
   Serial.println(topic);
   int ec = mqttClient.subscribe(topic);
@@ -308,12 +310,12 @@ void mqttMessageHandler(int messageSize)
   String msgTopic = mqttClient.messageTopic();
   Serial.printf("\n%s\n",msgTopic.c_str());
   String msg = mqttClient.readString();
-  if(msgTopic.equals(topic.command))
+  if(msgTopic.equals(subtopic.command))
   {
     bot_command = commandChangeHandler(msg); //update the command value
     controlHandler();
   }
-  else if(msgTopic.equals(topic.magnitude))
+  else if(msgTopic.equals(subtopic.magnitude))
   {
     bot_magnitude = magnitudeChangeHandler(msg); //update the magnitude value
     controlHandler();
