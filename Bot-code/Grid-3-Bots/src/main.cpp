@@ -192,6 +192,7 @@ void unload(void)
   delay(servo_unload_timing_ms);
   unloader.write(0);
 }
+
 /**
  * Rotates the bot by 180 degrees
  * \return true if it succeeds

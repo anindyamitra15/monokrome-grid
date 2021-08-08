@@ -10,5 +10,5 @@
  * WiFi credentials
  * Optional
  */
-//#define SSID "MQTT"
+//#define SSID "MQTTBot"
 //#define PASS "12345678"
