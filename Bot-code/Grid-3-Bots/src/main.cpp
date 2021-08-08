@@ -47,15 +47,24 @@ typedef enum commands
  * RF = Left motor reverse, right motor forward (turn left)
 */
 typedef enum directions{NN, FF, RR, RF, FR} direction;
+typedef struct topics
+{
+  String command = "";
+  String magnitude = "";
+} topics;
 const unsigned long us_per_degree = 1000;  //when motors rotate with 100cm/s
 const unsigned long servo_unload_timing_ms = 500;
 Servo unloader; //unloader servo object
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
-String commandTopic = "";
-String magnitudeTopic = "";
+topics topic;
+
+
+command bot_command = Stop;
+unsigned int bot_magnitude = 0;
 
 /*==============Function Prototypes====================*/
+
 void io_init(void);
 void mqtt_init(void);
 void wifi_init(void);
@@ -76,9 +85,11 @@ direction interpret_direction(command);
 void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
 uint16_t calculate_pwm_from_speed(unsigned int speed);
 void configModeCallback(WiFiManager *wifi);
+
 void mqttMessageHandler(int messageSize);
-void commandHandler(String msg);
-void magnitudeChangeHandler(String msg);
+command commandChangeHandler(String msg);
+unsigned int magnitudeChangeHandler(String msg);
+void controlHandler(void);
 
 /*=========Setup=========*/
 void setup() {
@@ -88,16 +99,16 @@ void setup() {
   stop();
   wifi_init();
   mqtt_init();
-  commandTopic = BOT_CONTROL_TOPIC;
-  commandTopic += "/";
-  commandTopic += ESP.getChipId();
-  commandTopic += SUBTOPIC_CMD;
-  Serial.println(commandTopic);
-  magnitudeTopic = BOT_CONTROL_TOPIC;
-  magnitudeTopic += "/";
-  magnitudeTopic += ESP.getChipId();
-  magnitudeTopic += SUBTOPIC_MAG;
-  Serial.println(magnitudeTopic);
+  topic.command = BOT_CONTROL_TOPIC;
+  topic.command += "/";
+  topic.command += ESP.getChipId();
+  topic.command += SUBTOPIC_CMD;
+  Serial.println(topic.command);
+  topic.magnitude = BOT_CONTROL_TOPIC;
+  topic.magnitude += "/";
+  topic.magnitude += ESP.getChipId();
+  topic.magnitude += SUBTOPIC_MAG;
+  Serial.println(topic.magnitude);
   Serial.printf("%s\n", subscribe_to_pc()?"subscribed":"not subscribed");
   mqttClient.onMessage(mqttMessageHandler);
 }
@@ -106,7 +117,6 @@ void setup() {
 /*=========Loop=========*/
 void loop() {
   mqttClient.poll();
-  
 }
 /*=========Loop=========*/
 
@@ -193,7 +203,6 @@ bool rotate()
 
 /**
  * Input Output Initialiser function
- * Set all the input-outputs
  */
 void io_init(void)
 {
@@ -256,13 +265,14 @@ void wifi_init()
       delay(200);
     }
   }
+  Serial.print("Chip ID: ");
   Serial.println(id);
 }
 
 /**
  * publishes the chipId on first connection
  * and retains the message
- * //TODO
+ * //TODO - incomplete
  */
 bool publishChipId(void)
 {
@@ -276,7 +286,7 @@ bool publishChipId(void)
  * 1. Command
  * 2. Magnitude
  * topics
- * //TODO
+ * //TODO - improve
 */
 bool subscribe_to_pc(void)
 {
@@ -287,33 +297,85 @@ bool subscribe_to_pc(void)
   Serial.print("Subscribing to topics: ");
   Serial.println(topic);
   int ec = mqttClient.subscribe(topic);
-  Serial.println(ec);
-  return (ec);
+  //Serial.println(ec);
+  return (bool)(ec);
 }
 
 void mqttMessageHandler(int messageSize)
 {
   String msgTopic = mqttClient.messageTopic();
-  Serial.println(msgTopic);
+  Serial.printf("\n%s\n",msgTopic.c_str());
   String msg = mqttClient.readString();
-  Serial.println(msg);
-  if(msgTopic.equals(commandTopic));
-    commandHandler(msg);
-  if(msgTopic.equals(magnitudeTopic))
-    magnitudeChangeHandler(msg);
+  if(msgTopic.equals(topic.command))
+    bot_command = commandChangeHandler(msg);  //update the command value
+  if(msgTopic.equals(topic.magnitude))
+    bot_magnitude = magnitudeChangeHandler(msg);  //update the magnitude value
+  controlHandler();
 }
-void commandHandler(String msg)
+
+command commandChangeHandler(String msg)
 {
-  //TODO
-  Serial.print("Command received: ");
-  Serial.println(msg);
-  
+  //debug code section
+  Serial.print("\nCommand received: ");
+  Serial.printf("%s\n", msg.c_str());
+  //function
+  int cmd = msg.toInt();
+  if(cmd < Stop || cmd > Rotate_180)
+  {
+    Serial.println("Invalid command, doing nothing!");
+    return bot_command; //return the previous command
+  }
+  return (command)cmd;  //return the new command
 }
-void magnitudeChangeHandler(String msg)
+
+unsigned int magnitudeChangeHandler(String msg)
 {
-  //TODO
-  Serial.print("Magnitude received: ");
-  Serial.println(msg);
+  //debug code section
+  Serial.print("\nMagnitude received: ");
+  Serial.printf("%s\n", msg.c_str());
+  //function
+  int mag = msg.toInt();
+  if(mag < 0 || mag > SPEED_MAX)
+  {
+    Serial.println("Magnitude out of range!");
+    return bot_magnitude;
+  }
+  return mag;
+}
+
+void controlHandler(void)
+{
+  switch (bot_command)
+  {
+  case Stop:
+    Serial.println("Bot Stops");
+    stop();
+    break;
+  case Forward:
+    Serial.println("Bot moves forward");
+    forward(bot_magnitude);
+    break;
+  case Reverse:
+    Serial.println("Bot moves reverse");
+    reverse(bot_magnitude);
+    break;
+  case Left_Turn:
+  case Right_Turn:
+    Serial.println("Bot turns");
+    turn(bot_command, bot_magnitude);
+    break;
+  case Unload:
+    Serial.println("Bot unloads payload");
+    unload();
+    break;
+  case Rotate_180:
+    Serial.println("Bot rotates 180 degrees");
+    rotate();
+    break;
+  default:
+    Serial.println("Don't know how I got here :(, but yeah, Fatal error");
+    break;
+  }
 }
 
 /*=============Lower level functions============*/

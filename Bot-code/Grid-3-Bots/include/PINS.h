@@ -5,9 +5,9 @@
 /**
  * PWM frequency can be adjusted on ESP core for Arduino
  * Minimum frequency = 100Hz
- * Maximum frequency = 60kHz
+ * Maximum frequency = 60000Hz
  */
-#define PWM_FREQ 200
+#define PWM_FREQ 200    //Hz
 /*MOTOR A*/
 //Left Motor PWM
 #define A_PWM 12
@@ -34,6 +34,6 @@
 /*Onboard LED on ESP8266*/
 #define LED 2
 /**
- * refer to ./here for ESP-12E pin configurations
+ * refer to Bot-code/README for ESP-12E pin configurations
  * 
 */

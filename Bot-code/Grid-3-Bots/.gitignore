@@ -4,4 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/workspace.code-workspace
-include\config.h
+include/config.h
