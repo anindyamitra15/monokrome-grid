@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "..\\..\\.."
+		},
+		{
+			"name": "Grid-3-Bots",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.c": "c",
+			"iosfwd": "cpp"
+		}
+	}
+}

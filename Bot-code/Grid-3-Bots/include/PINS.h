@@ -8,26 +8,26 @@
  * Maximum frequency = 60000Hz
  */
 #define PWM_FREQ 200    //Hz
-/*MOTOR A*/
+/*MOTOR L*/
 //Left Motor PWM
-#define A_PWM 12
-/*MOTOR B*/
+#define L_PWM 12
+/*MOTOR R*/
 //Right Motor PWM
-#define B_PWM 13
+#define R_PWM 13
 
 
 /*Two bits for setting the direction*/
-/*MOTOR A*/
+/*MOTOR L*/
 //Out1 connects to Left Motor +ve
-#define A_PLUS 4 //connects to In1
+#define L_PLUS 4 //connects to In1
 //Out2 connects to Left Motor -ve
-#define A_MINUS 5 //connects to In2
+#define L_MINUS 5 //connects to In2
 
-/*MOTOR B*/
+/*MOTOR R*/
 //Out3 connects to Right Motor +ve
-#define B_PLUS 0 //connects to In3
+#define R_PLUS 0 //connects to In3
 //Out4 connects to Right Motor -ve
-#define B_MINUS 14 //connects to In4
+#define R_MINUS 14 //connects to In4
 
 /*Servo output pin*/
 #define SERVO_PIN 15

@@ -1,3 +1,6 @@
+//Alternate implementation
+//obsolete functions commented out, will be removed
+
 #include <Arduino.h>
 #include <WiFiManager.h>
 #include <ArduinoMqttClient.h>
@@ -6,112 +9,146 @@
 #include "PINS.h"
 
 /*=============MACROS==============*/
+
 #define BAUD 76800
 
-#define SPEED_MAX 1000
-#define SPEED_MIN 0
-
 #define PWM_MAX 1023
-#define PWM_MIN 0
 
-#define ROTATION_SPEED 100
 #define SERVO_HIGHEST_DEGREE 90
-#define BOT_CONTROL_TOPIC "ToBot"
-#define BOT_PUBLISH_TOPIC "FromBot"
-#define SUBTOPIC_CMD "/Command"
-#define SUBTOPIC_MAG "/Magnitude"
 
-//macro functions
-#define set_A_PWM(pwm) \
-  analogWrite(A_PWM, pwm);
-#define set_B_PWM(pwm) \
-  analogWrite(B_PWM, pwm);
+/*====Topics Macros====*/
+#define TOPIC_SUB "ToBot"
+#define TOPIC_PUB "FromBot"
+/*====Topics Macros====*/
+
 #define SLASH String('/')
+//macro functions
+#define set_L_PWM(pwm) \
+  analogWrite(L_PWM, pwm);
+#define set_R_PWM(pwm) \
+  analogWrite(R_PWM, pwm);
 
 /*=======Globals=======*/
 
-typedef enum command
-{
-  Stop,
-  Forward,
-  Reverse,
-  Left_Turn,
-  Right_Turn,
-  Unload,
-  Rotate_180
-}command;
+/**
+ * enum for valid motor selection
+ * Unloader = 0
+ * Left = 1
+ * Right = 2
+ * Both = 3
+ */
+typedef enum motor {Unloader, Left, Right, Both} motor;
 
 /** Enum for valid directions
- * NN = No direction/Stop
- * FF = Both motors forward
- * RR = Both motors reverse
- * FR = Left motor forward, right motor reverse (turn right)
- * RF = Left motor reverse, right motor forward (turn left)
+ * Stop = 0
+ * Forward = 1
+ * Reverse = 2
 */
-typedef enum direction{NN, FF, RR, RF, FR} direction;
-typedef struct topics
+typedef enum direction{Stop, Forward, Reverse} direction;
+
+typedef struct motor_param
 {
-  String parentTopic;
-  String command;
-  String magnitude;
-} topics;
-const unsigned long us_per_degree = 1000;  //when motors rotate with 100cm/s
-const unsigned long servo_unload_timing_ms = 500;
+  direction dir;
+  uint16_t pwm;
+}motor_param;
+
+typedef struct route
+{
+  String topic;
+  String message;
+} route;
+typedef struct topic_subscribe
+{
+  String parent;
+  String direction;
+  String pwm;
+} topic_subscribe;
+typedef struct topic_publish
+{
+  String parent;
+  String botlist;
+  String error;
+} topic_publish;
+
+
+topic_subscribe sub;
+topic_publish   pub;
+
+motor_param left;
+motor_param right;
+
+const unsigned long servo_unload_tick = 500;
 Servo unloader; //unloader servo object
 WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
-topics subtopic;
-
-
-command bot_command = Stop;
-unsigned int bot_magnitude = 0;
+MqttClient mqttClient (wifiClient);
 
 /*==============Function Prototypes====================*/
 
 void io_init(void);
-void mqtt_init(void);
+bool mqtt_init(void);
 void wifi_init(void);
-void topics_init(void);
+void topics_init(void); //Change definition
 
-bool stop(void);
-bool forward(int magnitude);
-bool reverse(int magnitude);
-bool turn(command direction, int degree);
-void unload(void);
-bool rotate(void);
+void stop(void);  //Change definition
+//bool forward(int magnitude);
+//bool reverse(int magnitude);
+//bool turn(command direction, int degree);
+
+void unload(void); //improve definition
+
+//bool rotate(void);
 
 bool publishChipId(void);
-bool publishError(void);
+bool publishError(void);  //Change definition
 bool subscribe_to_pc(void);
+bool publishUnloader (bool);
 
-direction interpret_direction(command);
-bool setDirection(direction dir);
+void controlMotor(motor, direction, uint16_t);
 void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
 uint16_t calculate_pwm_from_speed(unsigned int speed);
 
 void configModeCallback(WiFiManager *wifi);
-void mqttMessageHandler(int messageSize);
-command commandChangeHandler(String msg);
-unsigned int magnitudeChangeHandler(String msg);
-void controlHandler(void);
+void mqttMessageHandler(int messageSize); //Change definition
+direction parseDirection(String);
+uint16_t parsePWM(String);
+String getLastTopic(String);
 
 /*=========Setup=========*/
-void setup() {
+void setup () {
   Serial.begin(BAUD);
   Serial.setDebugOutput(true);
   io_init();
   stop();
   wifi_init();
-  mqtt_init();
-  topics_init();
-  Serial.printf("%s\n", subscribe_to_pc()?"subscribed":"not subscribed");
+  
+  bool flag;
+  do
+  {
+    flag = true;
+    flag &= mqtt_init();
+    flag &= publishChipId();
+    flag &= subscribe_to_pc();
+  }while(!flag && Serial.println("Something failed"));
   mqttClient.onMessage(mqttMessageHandler);
 }
 /*=========Setup=========*/
 
 /*=========Loop=========*/
-void loop() {
+void loop () {
   mqttClient.poll();
+
+  //on disconnection behavior
+  static uint8_t fire = 0;
+  if (wifiClient.status() == WL_CONNECTION_LOST)
+  {
+    fire++;
+    if (fire > 3)
+    {
+      wifi_init();
+      mqtt_init();
+      fire = 0;
+    }
+  }
 }
 /*=========Loop=========*/
 
@@ -119,97 +156,45 @@ void loop() {
 
 /**
  * The bot (all the motors) stop when this function is called
+ * TODO - improve definition
  */
-bool stop(void)
+void stop (void)
 {
   //logic to set all motor outputs to 0
-  return setDirection(NN);
-}
-
-/**
- * Motor moves forward with magnitude cm/s speed
- * \param magnitude (Speed)
- * \return true on success
-*/
-bool forward(int magnitude)
-{
-  //logic to set the PWM from the magnitude and to move the bot forward
-  bool flag = true;
-  flag &= stop();
-  set_A_PWM(calculate_pwm_from_speed(magnitude));
-  set_B_PWM(calculate_pwm_from_speed(magnitude));
-  flag &= setDirection(FF);
-  return flag;
-}
-
-/**
- * Motor moves backwards with magnitude cm/s speed
- * \param magnitude (Speed)
- * \return true on success
-*/
-bool reverse(int magnitude)
-{
-  bool flag = true;
-  flag &= stop();
-  set_A_PWM(calculate_pwm_from_speed(magnitude));
-  set_B_PWM(calculate_pwm_from_speed(magnitude));
-  flag &= setDirection(RR);
-  return flag;
-}
-
-/**
- * Motor turns in a direction by certain degree
- * \param direction (left/right) from command
- * \param degree (degree of rotation)
- * \return true on success
-*/
-bool turn(command cmd, int degree)
-{
-  bool flag = true;
-  flag &= stop();
-  set_A_PWM(calculate_pwm_from_speed(ROTATION_SPEED));
-  set_B_PWM(calculate_pwm_from_speed(ROTATION_SPEED));
-  flag &= setDirection(interpret_direction(cmd));
-  delayMicroseconds(degree * us_per_degree);
-  flag &= stop();
-  return flag;
+  setMotorsDir(LOW, LOW, LOW, LOW);//change
+  set_L_PWM(0);
+  set_R_PWM(0);
 }
 
 /**
  * Unloads the load
  * and resets servo to position
  */
-void unload(void)
+void unload (void)
 {
   stop();
   unloader.write(0);
-  unloader.write(SERVO_HIGHEST_DEGREE);
-  delay(servo_unload_timing_ms);
+  for(int i = 0; i <= SERVO_HIGHEST_DEGREE; i++)
+  {
+    unloader.write(i);//slowly increases slope
+    delayMicroseconds(servo_unload_tick);
+  }
   unloader.write(0);
-}
-
-/**
- * Rotates the bot by 180 degrees
- * \return true if it succeeds
-*/
-bool rotate()
-{
-  return turn(Left_Turn, 180);
 }
 
 /**
  * Input Output Initialiser function
  */
-void io_init(void)
+void io_init (void)
 {
-  pinMode(LED, OUTPUT);
-  pinMode(A_PLUS, OUTPUT);
-  pinMode(A_MINUS, OUTPUT);
-  pinMode(B_PLUS, OUTPUT);
-  pinMode(B_MINUS, OUTPUT);
-  pinMode(A_PWM, OUTPUT);
-  pinMode(B_PWM, OUTPUT);
-  analogWriteFreq(PWM_FREQ);
+  pinMode(LED,      OUTPUT);
+  pinMode(L_PLUS,   OUTPUT);
+  pinMode(L_MINUS,  OUTPUT);
+  pinMode(R_PLUS,   OUTPUT);
+  pinMode(R_MINUS,  OUTPUT);
+  pinMode(L_PWM,    OUTPUT);
+  pinMode(R_PWM,    OUTPUT);
+  analogWriteFreq (PWM_FREQ);
   unloader.attach(SERVO_PIN);
 }
 
@@ -217,16 +202,18 @@ void io_init(void)
  * MQTT initialising function
  * //TODO - debug
 */
-void mqtt_init()
+bool mqtt_init ()
 {
+  topics_init();
   //attempt to connect to mqtt broker
   if (!mqttClient.connect(broker, mqtt_port))
   {
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
-    while (1);//wait for watchdog to bite
+    return false;
   }
   Serial.println("You're connected to the MQTT broker!");
+  return true;
 }
 
 /**
@@ -236,7 +223,7 @@ void mqtt_init()
  * where you can put wifi credentials on
  * 192.168.4.1
 */
-void wifi_init()
+void wifi_init ()
 {
   WiFiManager wifi;
   wifi.setDebugOutput(false);
@@ -264,28 +251,41 @@ void wifi_init()
       delay(200);
     }
   }
-  
+}
+
+//re-define
+void topics_init(void)
+{
+  //Subscribe topics Struct initialise
+  sub.parent = TOPIC_SUB + SLASH + String(ESP.getChipId());
+  sub.direction = "Direction";
+  sub.pwm = "PWM";
+
+  //Publish topics Struct initialise
+  pub.parent = TOPIC_PUB;
+  pub.botlist = pub.parent + SLASH + "Botlist";
+  pub.error = pub.parent + SLASH + "Error";
 }
 
 /**
  * publishes the chipId on first connection
  * and retains the message
- * //TODO - incomplete
+ * //TODO - test
  */
-bool publishChipId(void)
+bool publishChipId (void)
 {
-  String topic = BOT_PUBLISH_TOPIC;
-  topic += "/Botlist";
-  return false;
+  bool flag = true;
+  Serial.print("Publishing ChipId to: ");
+  Serial.println(pub.botlist);
+  flag &= mqttClient.beginMessage(pub.botlist);
+  mqttClient.print(ESP.getChipId());
+  flag &= mqttClient.endMessage();
+  return flag;
 }
-
-void topics_init(void)
+//define
+bool publishError (void)
 {
-  subtopic.parentTopic = BOT_CONTROL_TOPIC + SLASH + String(ESP.getChipId());
-  subtopic.command = subtopic.parentTopic + SUBTOPIC_CMD;
-  subtopic.magnitude = subtopic.parentTopic + SUBTOPIC_MAG;
-  Serial.println(subtopic.command);
-  Serial.println(subtopic.magnitude);
+  return false;
 }
 
 /**
@@ -293,11 +293,11 @@ void topics_init(void)
  * 1. Command
  * 2. Magnitude
  * topics
- * //TODO - improve
+ * //TODO - re-define
 */
-bool subscribe_to_pc(void)
+bool subscribe_to_pc (void)
 {
-  String topic = subtopic.parentTopic + SLASH + '+';
+  String topic = sub.parent + SLASH + '#';//multilevel wild card
   Serial.print("Subscribing to topics: ");
   Serial.println(topic);
   int ec = mqttClient.subscribe(topic);
@@ -305,154 +305,146 @@ bool subscribe_to_pc(void)
   return (bool)(ec);
 }
 
-void mqttMessageHandler(int messageSize)
+/**
+ * \param state true/false
+ * \return true on success
+ */
+bool publishUnloader(bool state)
+{
+  bool flag = true;
+  String topic = sub.parent + SLASH + '0';
+  Serial.println(topic);
+  flag &= mqttClient.beginMessage(topic);
+  mqttClient.print(state);
+  flag &= mqttClient.endMessage();
+  return flag;
+}
+
+void mqttMessageHandler (int messageSize)
 {
   String msgTopic = mqttClient.messageTopic();
+
+  //subtracts the subscribe parent topic to reduce length
+  msgTopic = msgTopic.substring(sub.parent.length(), msgTopic.length());
+
   Serial.printf("\n%s\n",msgTopic.c_str());
+
   String msg = mqttClient.readString();
-  if(msgTopic.equals(subtopic.command))
-  {
-    bot_command = commandChangeHandler(msg); //update the command value
-    controlHandler();
-  }
-  else if(msgTopic.equals(subtopic.magnitude))
-  {
-    bot_magnitude = magnitudeChangeHandler(msg); //update the magnitude value
-    controlHandler();
-  }
+  int topic =  ((int)msgTopic.charAt(1) - '0');
+  //if topic is unloader
+  if(topic == Unloader)
+    if (msg.toInt() == 1 || msg.equals("true"))
+    {
+      unload();
+      publishUnloader(false); //deactivate unloader
+      Serial.println("unloaded");
+    }
+    else
+      Serial.println("unloader deactivated");
   else
-    Serial.println("Invalid subtopic :3");
-  
-}
-
-/**
- * Handles the changed command
- * \param message as String
- * \return command which is to be updated by programmer
- */
-command commandChangeHandler(String msg)
-{
-  //debug code section
-  Serial.print("\nCommand received: ");
-  Serial.printf("%s\n", msg.c_str());
-  //function
-  int cmd = msg.toInt();
-  if(cmd < Stop || cmd > Rotate_180)
   {
-    Serial.println("Invalid command, doing nothing!");
-    return bot_command; //return the previous command
+    Serial.println("Motor Commands Incoming");
+    bool isDirection = (getLastTopic(msgTopic).equals(sub.direction));
+    Serial.print(isDirection ? "Direction = " : "PWM = ");
+    Serial.println(isDirection ? parseDirection(msg) : parsePWM(msg));
+    //selects the motor from topic
+    switch (topic)
+    {
+    case Left:
+    Serial.println("To left motor");
+      if (isDirection)
+        left.dir = parseDirection(msg);
+      else
+        left.pwm = parsePWM(msg);
+        controlMotor(Left, left.dir, left.pwm);
+      break;
+    case Right:
+      Serial.println("To right motor");
+      if (isDirection)
+        right.dir = parseDirection(msg);
+      else
+        right.pwm = parsePWM(msg);
+      controlMotor(Right, right.dir, right.pwm);
+      break;
+    case Both:
+      Serial.println("To both motors");
+      if(isDirection)
+        left.dir = right.dir = parseDirection(msg);
+      else
+        left.pwm = right.pwm = parsePWM(msg);
+      controlMotor(Both, left.dir, left.pwm);
+      break;
+
+    default:
+      Serial.println("bad topic selection");
+      break;
+    }
   }
-  return (command)cmd;  //return the new command
 }
 
-/**
- * Handles the changed magnitude
- * \param message as String
- * \return magnitude as integer which is to be updated by programmer
- */
-unsigned int magnitudeChangeHandler(String msg)
+direction parseDirection(String msg)
 {
-  //debug code section
-  Serial.print("\nMagnitude received: ");
-  Serial.printf("%s\n", msg.c_str());
-  //function
-  int mag = msg.toInt();
-  if(mag < 0 || mag > SPEED_MAX)
+  //bounds to stop and returns enum direction
+  switch (msg.toInt())
   {
-    Serial.println("Magnitude out of range!");
-    return bot_magnitude;
-  }
-  return mag;
-}
-
-/**
- * Controls the bot whenever the function is called
- * with the current command (global)bot_command
- * and the current magnitude (global)bot_magnitude
- */
-void controlHandler(void)
-{
-  switch (bot_command)
-  {
-  case Stop:
-    Serial.println("Bot Stops");
-    stop();
-    break;
   case Forward:
-    Serial.printf("Bot moves forward at %u cm/s\n", bot_magnitude);
-    forward(bot_magnitude);
-    break;
+    return Forward;
   case Reverse:
-    Serial.printf("Bot moves reverse at %u cm/s\n", bot_magnitude);
-    reverse(bot_magnitude);
-    break;
-  case Left_Turn:
-  case Right_Turn:
-    Serial.println("Bot turns");
-    turn(bot_command, bot_magnitude);
-    break;
-  case Unload:
-    Serial.println("Bot unloads payload");
-    unload();
-    break;
-  case Rotate_180:
-    Serial.println("Bot rotates 180 degrees");
-    rotate();
-    break;
+    return Reverse;
   default:
-    Serial.println("Don't know how I got here :(, but yeah, Fatal error");
-    break;
+    return Stop;
   }
+}
+
+uint16_t parsePWM(String msg)
+{
+  int val = msg.toInt();
+  //bounds the value from 0 to PWM_MAX and returns
+  return (val < 0) ? 0 : ( (val > PWM_MAX) ? PWM_MAX : msg.toInt());
 }
 
 /*=============Lower level functions============*/
 
-/**
- * This functions takes in command and interprets the direction
- * \param command: typedef enum commands
- * \return direction (typedef enum directions)
- */
-direction interpret_direction(command c)
+void controlMotor(motor m, direction d, uint16_t pwm)
 {
-  if(c == Left_Turn)
-    return RF;
-  if(c == Right_Turn)
-    return FR;
-  return NN;
-}
-
-/**
- * Set Direction from enum directions
- * \param direction: 0 to 4,
- * NN = No direction/Stop,
- * FF = Both motors forward,
- * RR = Both motors reverse,
- * FR = Left motor forward, right motor reverse (turn right),
- * RF = Left motor reverse, right motor forward (turn left)
- * \return true on success
-*/
-bool setDirection(direction dir)
-{
-  switch (dir)
+  bool plus = false;
+  bool minus = false;
+  //direction handler
+  switch(d)
   {
-  case NN:
-    setMotorsDir(LOW, LOW,   LOW, LOW);
-  case FF:
-    setMotorsDir(HIGH, LOW, HIGH, LOW);
+    case Forward:
+      plus = HIGH;
+      minus = LOW;
+      break;
+    case Reverse:
+      plus = LOW;
+      minus = HIGH;
+      break;
+    default:
+      stop();
+      break;
+  }
+  //motor selector
+  switch (m)
+  {
+  case Left:
+    set_L_PWM(pwm);
+    digitalWrite(L_PLUS, plus);
+    digitalWrite(L_MINUS, minus);
     break;
-  case RR:
-    setMotorsDir(LOW, HIGH, LOW, HIGH);
+  case Right:
+    set_R_PWM(pwm);
+    digitalWrite(R_PLUS, plus);
+    digitalWrite(R_MINUS, minus);
     break;
-  case RF:
-    setMotorsDir(LOW, HIGH, HIGH, LOW);
-    break;
-  case FR:
-    setMotorsDir(HIGH, LOW, LOW, HIGH);
+  case Both:
+    set_L_PWM(pwm);
+    set_R_PWM(pwm);
+    setMotorsDir(plus, minus, plus, minus);
     break;
   default:
-    return false; //returns false on wrong input
+    break;
   }
-  return true;  //returns true on success
 }
 
 /**
@@ -462,30 +454,25 @@ bool setDirection(direction dir)
  * \param In3 Boolean Logic for In3
  * \param In4 Boolean Logic for In4
 */
-void setMotorsDir(bool In1, bool In2, bool In3, bool In4)
+void setMotorsDir (bool In1, bool In2, bool In3, bool In4)
 {
-  digitalWrite(A_PLUS, In1);
-  digitalWrite(A_MINUS,In2);
-  digitalWrite(B_PLUS, In3);
-  digitalWrite(B_MINUS,In4);
-}
-
-/**
- * Function to calculate PWM from Speed
- * \param speed as unsigned integer
- * \return PWM value, unsigned 16-bit integer
-*/
-uint16_t calculate_pwm_from_speed(unsigned int speed)
-{
-  return map(speed, SPEED_MIN, SPEED_MAX, PWM_MIN, PWM_MAX);
+  digitalWrite(L_PLUS, In1);
+  digitalWrite(L_MINUS,In2);
+  digitalWrite(R_PLUS, In3);
+  digitalWrite(R_MINUS,In4);
 }
 
 /**
  * used only by WiFiManager
  */
-void configModeCallback(WiFiManager *wifi)
+void configModeCallback (WiFiManager *wifi)
 {
   Serial.println("Entered config mode: ");
   Serial.println(WiFi.softAPIP());
   Serial.println(wifi->getConfigPortalSSID());
+}
+
+String getLastTopic(String s)
+{
+  return s.substring( s.lastIndexOf(SLASH)+1, s.length());
 }
