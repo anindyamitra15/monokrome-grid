@@ -14,7 +14,7 @@
 
 #define PWM_MAX 1023
 
-#define SERVO_HIGHEST_DEGREE 90
+#define UNLOAD_DEGREE 90
 
 /*====Topics Macros====*/
 #define TOPIC_SUB "ToBot"
@@ -23,11 +23,15 @@
 
 #define SLASH String('/')
 //macro functions
-#define set_L_PWM(pwm) \
+void set_L_PWM(uint16_t pwm)
+{
   analogWrite(L_PWM, pwm);
-#define set_R_PWM(pwm) \
+}
+  
+void  set_R_PWM(uint16_t pwm)
+{
   analogWrite(R_PWM, pwm);
-
+}
 /*=======Globals=======*/
 
 /**
@@ -87,19 +91,14 @@ MqttClient mqttClient (wifiClient);
 void io_init(void);
 bool mqtt_init(void);
 void wifi_init(void);
-void topics_init(void); //Change definition
+void topics_init(void);
 
-void stop(void);  //Change definition
-//bool forward(int magnitude);
-//bool reverse(int magnitude);
-//bool turn(command direction, int degree);
-
+void stop(void);  //improve definition
 void unload(void); //improve definition
 
-//bool rotate(void);
 
 bool publishChipId(void);
-bool publishError(void);  //Change definition
+bool publishError(String);  //Change definition
 bool subscribe_to_pc(void);
 bool publishUnloader (bool);
 
@@ -127,6 +126,7 @@ void setup () {
     flag = true;
     flag &= mqtt_init();
     flag &= publishChipId();
+    //flag &= publishError("Hi");
     flag &= subscribe_to_pc();
   }while(!flag && Serial.println("Something failed"));
   mqttClient.onMessage(mqttMessageHandler);
@@ -174,7 +174,7 @@ void unload (void)
 {
   stop();
   unloader.write(0);
-  for(int i = 0; i <= SERVO_HIGHEST_DEGREE; i++)
+  for(int i = 0; i <= UNLOAD_DEGREE; i++)
   {
     unloader.write(i);//slowly increases slope
     delayMicroseconds(servo_unload_tick);
@@ -282,18 +282,30 @@ bool publishChipId (void)
   flag &= mqttClient.endMessage();
   return flag;
 }
-//define
-bool publishError (void)
+
+/**
+ * Function can be called to publish
+ * any error to pub.error in String format
+ * \param message the error message in string format
+ * \return true on success
+ */
+bool publishError (String msg)
+
 {
-  return false;
+  bool flag = true;
+  Serial.print("Publishing Error to: ");
+  Serial.println(pub.error);
+  flag &= mqttClient.beginMessage(pub.error);
+  mqttClient.printf("{\"id\":\"%s\",\"msg\":\"%s\"}",
+    String(ESP.getChipId()).c_str(), 
+    msg.c_str());
+  flag &= mqttClient.endMessage();
+  return flag;
 }
 
 /**
  * Function to subscribe to
- * 1. Command
- * 2. Magnitude
- * topics
- * //TODO - re-define
+ * Control topics
 */
 bool subscribe_to_pc (void)
 {
@@ -306,6 +318,7 @@ bool subscribe_to_pc (void)
 }
 
 /**
+ * Function only used by MQTT message Handler
  * \param state true/false
  * \return true on success
  */
@@ -319,7 +332,11 @@ bool publishUnloader(bool state)
   flag &= mqttClient.endMessage();
   return flag;
 }
-
+/**
+ * Handles incoming messages from TOPIC_SUB
+ * it's a callback used by onMessage of mqttClient
+ * binded in setup()
+ */
 void mqttMessageHandler (int messageSize)
 {
   String msgTopic = mqttClient.messageTopic();
@@ -351,7 +368,7 @@ void mqttMessageHandler (int messageSize)
     switch (topic)
     {
     case Left:
-    Serial.println("To left motor");
+      Serial.println("To left motor");
       if (isDirection)
         left.dir = parseDirection(msg);
       else
@@ -379,6 +396,7 @@ void mqttMessageHandler (int messageSize)
       Serial.println("bad topic selection");
       break;
     }
+    //Serial.printf("%d, %d,%d, %d\n", left.dir, left.pwm, right.dir, right.pwm);
   }
 }
 
@@ -407,42 +425,46 @@ uint16_t parsePWM(String msg)
 
 void controlMotor(motor m, direction d, uint16_t pwm)
 {
-  bool plus = false;
-  bool minus = false;
+  bool plus_val = false;
+  bool minus_val = false;
   //direction handler
   switch(d)
   {
     case Forward:
-      plus = HIGH;
-      minus = LOW;
+      plus_val = HIGH;
+      minus_val = LOW;
       break;
     case Reverse:
-      plus = LOW;
-      minus = HIGH;
+      plus_val = LOW;
+      minus_val = HIGH;
       break;
     default:
-      stop();
+      plus_val = LOW;
+      minus_val = LOW;
       break;
   }
-  //motor selector
+  //motor selector logic
   switch (m)
   {
   case Left:
+    //Serial.printf("Left PWM: %u\n", pwm);
     set_L_PWM(pwm);
-    digitalWrite(L_PLUS, plus);
-    digitalWrite(L_MINUS, minus);
+    digitalWrite(L_PLUS, plus_val);
+    digitalWrite(L_MINUS, minus_val);
     break;
   case Right:
+    //Serial.printf("Right PWM: %u\n", pwm);
     set_R_PWM(pwm);
-    digitalWrite(R_PLUS, plus);
-    digitalWrite(R_MINUS, minus);
+    digitalWrite(R_PLUS, plus_val);
+    digitalWrite(R_MINUS, minus_val);
     break;
   case Both:
     set_L_PWM(pwm);
     set_R_PWM(pwm);
-    setMotorsDir(plus, minus, plus, minus);
+    setMotorsDir(plus_val, minus_val, plus_val, minus_val);
     break;
   default:
+    stop();
     break;
   }
 }
@@ -463,7 +485,7 @@ void setMotorsDir (bool In1, bool In2, bool In3, bool In4)
 }
 
 /**
- * used only by WiFiManager
+ * used only by wifi_init()
  */
 void configModeCallback (WiFiManager *wifi)
 {
@@ -472,6 +494,10 @@ void configModeCallback (WiFiManager *wifi)
   Serial.println(wifi->getConfigPortalSSID());
 }
 
+/**
+ * returns the last topic string from the full topic string
+ * used by mqttMessageHandler()
+ */
 String getLastTopic(String s)
 {
   return s.substring( s.lastIndexOf(SLASH)+1, s.length());
