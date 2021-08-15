@@ -23,15 +23,11 @@
 
 #define SLASH String('/')
 //macro functions
-void set_L_PWM(uint16_t pwm)
-{
+#define set_L_PWM(pwm)\
   analogWrite(L_PWM, pwm);
-}
-  
-void  set_R_PWM(uint16_t pwm)
-{
+#define set_R_PWM(pwm)\
   analogWrite(R_PWM, pwm);
-}
+
 /*=======Globals=======*/
 
 /**
@@ -96,7 +92,6 @@ void topics_init(void);
 void stop(void);  //improve definition
 void unload(void); //improve definition
 
-
 bool publishChipId(void);
 bool publishError(String);  //Change definition
 bool subscribe_to_pc(void);
@@ -104,7 +99,6 @@ bool publishUnloader (bool);
 
 void controlMotor(motor, direction, uint16_t);
 void setMotorsDir(bool In1, bool In2, bool In3, bool In4);
-uint16_t calculate_pwm_from_speed(unsigned int speed);
 
 void configModeCallback(WiFiManager *wifi);
 void mqttMessageHandler(int messageSize); //Change definition
@@ -223,7 +217,7 @@ bool mqtt_init ()
  * where you can put wifi credentials on
  * 192.168.4.1
 */
-void wifi_init ()
+void wifi_init (void)
 {
   WiFiManager wifi;
   wifi.setDebugOutput(false);
@@ -253,7 +247,9 @@ void wifi_init ()
   }
 }
 
-//re-define
+/**
+ * prepares all the topic strings
+ */
 void topics_init(void)
 {
   //Subscribe topics Struct initialise
@@ -270,7 +266,8 @@ void topics_init(void)
 /**
  * publishes the chipId on first connection
  * and retains the message
- * //TODO - test
+ * \return true on success
+ * //TODO - track changes
  */
 bool publishChipId (void)
 {
@@ -332,10 +329,12 @@ bool publishUnloader(bool state)
   flag &= mqttClient.endMessage();
   return flag;
 }
+
 /**
  * Handles incoming messages from TOPIC_SUB
  * it's a callback used by onMessage of mqttClient
  * binded in setup()
+ * \param messageSize
  */
 void mqttMessageHandler (int messageSize)
 {
@@ -396,33 +395,17 @@ void mqttMessageHandler (int messageSize)
       Serial.println("bad topic selection");
       break;
     }
-    //Serial.printf("%d, %d,%d, %d\n", left.dir, left.pwm, right.dir, right.pwm);
   }
-}
-
-direction parseDirection(String msg)
-{
-  //bounds to stop and returns enum direction
-  switch (msg.toInt())
-  {
-  case Forward:
-    return Forward;
-  case Reverse:
-    return Reverse;
-  default:
-    return Stop;
-  }
-}
-
-uint16_t parsePWM(String msg)
-{
-  int val = msg.toInt();
-  //bounds the value from 0 to PWM_MAX and returns
-  return (val < 0) ? 0 : ( (val > PWM_MAX) ? PWM_MAX : msg.toInt());
 }
 
 /*=============Lower level functions============*/
 
+/**
+ * handles all the control signals
+ * \param motor Left/Right/Both
+ * \param direction Stop/Forward/Reverse
+ * \param pwm unsigned integer from 0 to 1023
+ */
 void controlMotor(motor m, direction d, uint16_t pwm)
 {
   bool plus_val = false;
@@ -501,4 +484,25 @@ void configModeCallback (WiFiManager *wifi)
 String getLastTopic(String s)
 {
   return s.substring( s.lastIndexOf(SLASH)+1, s.length());
+}
+
+direction parseDirection(String msg)
+{
+  //bounds to stop and returns enum direction
+  switch (msg.toInt())
+  {
+  case Forward:
+    return Forward;
+  case Reverse:
+    return Reverse;
+  default:
+    return Stop;
+  }
+}
+
+uint16_t parsePWM(String msg)
+{
+  int val = msg.toInt();
+  //bounds the value from 0 to PWM_MAX and returns
+  return (val < 0) ? 0 : ((val > PWM_MAX) ? PWM_MAX : msg.toInt());
 }
