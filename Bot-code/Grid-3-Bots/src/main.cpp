@@ -388,7 +388,7 @@ void mqttMessageHandler (int messageSize)
         left.dir = right.dir = parseDirection(msg);
       else
         left.pwm = right.pwm = parsePWM(msg);
-      controlMotor(Both, left.dir, left.pwm);
+      controlMotor(Both, min(left.dir, right.dir), min(left.pwm, right.pwm));
       break;
 
     default:
