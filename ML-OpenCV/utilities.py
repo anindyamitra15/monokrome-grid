@@ -4,36 +4,39 @@ import cv2
 
 
 class Edge:
-    def __init__(self, a, b):
+    def __init__(self, a, b): # self be the NxN matrice
         self.a = a
         self.b = b
         self.length = np.linalg.norm(a - b)
+         # i guess this is giving out the magnitude of the path of the bot to the final position
+        # norm of a vector being simply its magnitude i.e sqrt(a^2+b^2)
+        # norm of a matrix is the eigenvalue of its matrix i.e the eigenvalue is the factor by which it is stretched
 
     def __lt__(self, other):
         return self.length < other.length
-# gg
 
-def angle_btwn(a, b):
+def angle_btwn(a, b): # angle between vectors a and b
     a = a / np.linalg.norm(a)
     b = b / np.linalg.norm(b)
     n = np.cross(a, b)
 
-    if n > 0:
-        return np.arccos(np.dot(a, b))
+    if n > 0:    # finding out the quadrent of the angle and changing cos inverse accordingly
+        return np.arccos(np.dot(a, b))  #the angles dot returning the a.b/|a||b|
     else:
         return -np.arccos(np.dot(a, b))
+# angle btwn fnc is used for finding the angle for the bot to turn in the magnitude of direction
 
-
-def triangulate(pts):
-    edges = [Edge(a, b) for (a, b) in list(combinations(pts, 2))]
+def triangulate(pts):  #triangulating procedure
+    edges = [Edge(a, b) for (a, b) in list(combinations(pts, 2))] #?????
     edges.sort()
 
     diag = edges[2]
 
     cnrs = []
     for i in range(3):
-        cnrs.append(edges[i].a)
+        cnrs.append(edges[i].a) #ADDS ELEMENT TO ARRAY  
         cnrs.append(edges[i].b)
+
 
     pos = (diag.a + diag.b) / 2
     top_left = np.zeros(2)
