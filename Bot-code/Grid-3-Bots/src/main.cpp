@@ -7,7 +7,6 @@
 #include <Servo.h>
 #include "config.h"
 #include "PINS.h"
-
 /*=============MACROS==============*/
 
 #define BAUD 76800
