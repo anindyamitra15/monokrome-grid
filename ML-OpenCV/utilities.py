@@ -96,8 +96,8 @@ print(var_new)
     return [pos.astype(int), dirn.astype(int)]  #returns a list having elements [pos, dirn], dirn is a 2D array.,
 
 
-def navigate(pos, dirn, vtms):
-    rts = [Edge(pos, vtm) for vtm in vtms]
+def navigate(pos, dirn, vtms):  # dirn is 2D array
+    rts = [Edge(pos, vtm) for vtm in vtms] #Class List
     rts.sort()
 
     rt = rts[0]
@@ -105,32 +105,30 @@ def navigate(pos, dirn, vtms):
     if rt.length == 0:
         angle = 0
     else:
-        angle = angle_btwn(dirn, (rt.b - rt.a))
+        angle = angle_btwn(dirn, (rt.b - rt.a)) #Calling function angle_btwn()
 
     return [rts, angle, int(rt.length)]
 
 
-def draw_vtm(frame, vtms):
+def draw_vtm(frame, vtms): 
     for vtm in vtms:
-        cv2.circle(frame, tuple(vtm), 10,
-                   (0, 0, 255), 1)
-        cv2.putText(frame, "({},{})".format(vtm[0], vtm[1]), tuple(vtm - 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        cv2.circle(frame, tuple(vtm), 10, (0, 0, 255), 1) #cv2.circle(img, center, radius, color[, thickness[, lineType[, shift]]]) -> img
+        cv2.putText(frame, "({},{})".format(vtm[0], vtm[1]), tuple(vtm - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                #cv2.putText: (img, text, org, fontFace, fontScale, color, thickness=..., lineType=..., bottomLeftOrigin=...) -> Any
 
-
-def draw_pts(frame, pts):
+def draw_pts(frame, pts): 
     for pt in pts:
-        cv2.drawMarker(frame, tuple(pt), (0, 255, 0), cv2.MARKER_TILTED_CROSS, 10, 1, 8)
+        cv2.drawMarker(frame, tuple(pt), (0, 255, 0), cv2.MARKER_TILTED_CROSS, 10, 1, 8) #cv2.drawMarker: (img, position, color, markerType=..., markerSize=..., thickness=..., line_type=...) -> Any
         cv2.putText(frame, "({},{})".format(pt[0], pt[1]), tuple(pt - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
 
 def draw_bot(frame, pos, dirn):
-    cv2.line(frame, tuple(pos), tuple(pos + dirn), (0, 0, 255), 1)
+    cv2.line(frame, tuple(pos), tuple(pos + dirn), (0, 0, 255), 1) #cv2.line: (img, pt1, pt2, color, thickness=..., lineType=..., shift=...) -> Any
 
 
 def draw_rts(frame, pos, rts, angle, dist):
-    for (i, rt) in enumerate(rts):
+    for (i, rt) in enumerate(rts): #The enumerate object yields pairs containing a count (from start, which defaults to zero) and a value yielded by the iterable argument.
         if i == 0:
             cv2.line(frame, tuple(rt.a), tuple(rt.b), (0, 255, 0), 1)
         if i != 0:
@@ -138,11 +136,10 @@ def draw_rts(frame, pos, rts, angle, dist):
 
 
 def display_msg(frame, msg, color):
-    cv2.putText(frame, msg, (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    cv2.putText(frame, msg, (10, 30),cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
 
 def remove_vtm(vtms, rt):
     for (i, vtm) in enumerate(vtms):
         if np.array_equal(vtm, rt.b):
-            vtms.pop(i)
+            vtms.pop(i) # Poping i'th element of vtms
