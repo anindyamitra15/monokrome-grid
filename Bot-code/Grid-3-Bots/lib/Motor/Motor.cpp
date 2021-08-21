@@ -33,6 +33,7 @@ bool Motor::setDirection(direction d)
         case Reverse:
             digitalWrite(in_minus, HIGH);
             digitalWrite(in_plus,   LOW);
+            break;
         case Stop:
             digitalWrite(in_plus, LOW);
             digitalWrite(in_minus, LOW);

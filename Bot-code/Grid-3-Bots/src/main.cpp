@@ -162,6 +162,7 @@ void io_init (void)
 {
   left.begin();
   right.begin();
+  pinMode(LED, OUTPUT);
   analogWriteFreq (PWM_FREQ);
   unloader.attach(SERVO_PIN);
 }

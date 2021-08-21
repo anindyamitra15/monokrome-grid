@@ -13,7 +13,7 @@
 #define L_PWM 12
 /*MOTOR R*/
 //Right Motor PWM
-#define R_PWM 13
+#define R_PWM 0
 
 
 /*Two bits for setting the direction*/
@@ -25,7 +25,7 @@
 
 /*MOTOR R*/
 //Out3 connects to Right Motor +ve
-#define R_PLUS 0 //connects to In3
+#define R_PLUS 13 //connects to In3
 //Out4 connects to Right Motor -ve
 #define R_MINUS 14 //connects to In4
 
