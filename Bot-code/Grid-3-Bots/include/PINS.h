@@ -10,27 +10,27 @@
 #define PWM_FREQ 200    //Hz
 /*MOTOR L*/
 //Left Motor PWM
-#define L_PWM 12
+#define L_PWM 12 //(D6)
 /*MOTOR R*/
 //Right Motor PWM
-#define R_PWM 0
+#define R_PWM 0 //(D3)
 
 
 /*Two bits for setting the direction*/
 /*MOTOR L*/
 //Out1 connects to Left Motor +ve
-#define L_PLUS 4 //connects to In1
+#define L_PLUS 4 //connects to In1 (D2)
 //Out2 connects to Left Motor -ve
-#define L_MINUS 5 //connects to In2
+#define L_MINUS 5 //connects to In2 (D1)
 
 /*MOTOR R*/
 //Out3 connects to Right Motor +ve
-#define R_PLUS 13 //connects to In3
+#define R_PLUS 13 //connects to In3 (D7)
 //Out4 connects to Right Motor -ve
-#define R_MINUS 14 //connects to In4
+#define R_MINUS 14 //connects to In4 (D2)
 
 /*Servo output pin*/
-#define SERVO_PIN 15
+#define SERVO_PIN 15    //(D8)
 #define UNLOAD_DEGREE 90
 
 /*Onboard LED on ESP8266*/
