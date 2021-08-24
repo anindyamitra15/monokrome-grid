@@ -67,7 +67,7 @@ def find_vtms():
         cv2.imshow('frame', frame)
 
         # Return when the space key is pressed
-        if cv2.waitKey(1) & 0xff == ord(' '):
+        if cv2.waitKey(1) == ord(' '):
             return vtms
 
 
