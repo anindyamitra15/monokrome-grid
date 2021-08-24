@@ -1,6 +1,9 @@
 # import the necessary packages
+# local packages
 from detection import detect
 from utilities import triangulate, navigate, draw_vtm, draw_pts, draw_bot, draw_rts, display_msg, remove_vtm
+
+# global packages
 import numpy as np
 import cv2
 import time
@@ -13,7 +16,7 @@ pool = Pool(8)  # Creates a pool with ten threads; more threads = more concurren
 # be one of them in your application
 # as modules are cached after initialization.
 
-# api-endpoint
+# api-endpoint for mqtt
 url = "http://192.168.43.224"  #MQTT
 
 # User input for the number of victims to be rescued
@@ -64,7 +67,7 @@ def find_vtms():
         cv2.imshow('frame', frame)
 
         # Return when the space key is pressed
-        if cv2.waitKey(1) == ord(' '):
+        if cv2.waitKey(1) & 0xff == ord(' '):
             return vtms
 
 
@@ -142,8 +145,8 @@ while cap.isOpened():
                     dist = 0
                     returning = False
 
-                    if not dev_mode:
-                        r = requests.get(url + "/drop")
+                    # if not dev_mode:
+                    #     r = requests.get(url + "/drop")
 
                     if len(vtms) == 0:
                         ending = True
@@ -161,8 +164,8 @@ while cap.isOpened():
                     dist = 0
                     ending = False
 
-                    if not dev_mode:
-                        r = requests.get(url + "/stop")
+                    # if not dev_mode:
+                    #     r = requests.get(url + "/stop")
 
                     finished = True
 
@@ -174,8 +177,8 @@ while cap.isOpened():
                 returning = True
                 remove_vtm(vtms, rts[0])
 
-                if not dev_mode:
-                    r = requests.get(url + "/grab")
+                # if not dev_mode:
+                #     r = requests.get(url + "/grab")
 
         # Defining a params dict for the parameters to be sent to the API
         parameters = {
