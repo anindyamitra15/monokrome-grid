@@ -3,11 +3,12 @@ import json  # required to parse FromBot/Error
 import threading  # for mqtt loop
 from enum import Enum
 from numpy import uint16
+import numpy as np
 
 
 # globals storing topics and credentials
 class cred:
-    bots = []  # add all the bots at runtime TODO replace with np.array
+    bots = np.array([])  # add all the bots at runtime TODO replace with np.array
     broker = "test.mosquitto.org"
     port = 1883
     clientName = "COMPUTER"
@@ -45,7 +46,7 @@ def on_message(client, userdata, message):
 
         # TODO - replace logic below with np.array for optimisation
         if chip_id not in cred.bots:
-            cred.bots.append(chip_id)
+            np.insert(cred.bots, len(cred.bots), chip_id) #check
 
     elif message.topic == cred.topicSub.PARENT + '/' + cred.topicSub.ERROR:
         print(cred.topicSub.ERROR + " is selected")
