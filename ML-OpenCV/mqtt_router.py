@@ -1,20 +1,17 @@
 import paho.mqtt.client as mqtt
-import json  # required to parse FromBot/Error
-from enum import Enum
-from numpy import uint16
-import numpy as np
+# import json  # required to parse FromBot/Error
 import time
 
 
 # Enums
 class enums:
-    class motors(Enum):
+    class motors:
         UNLOADER = 0
         MOTOR_LEFT = 1
         MOTOR_RIGHT = 2
         MOTOR_BOTH = 3
 
-    class directions(Enum):
+    class directions:
         Stop = 0
         Forward = 1
         Reverse = 2
@@ -22,7 +19,7 @@ class enums:
 
 # globals storing topics and credentials
 class cred:
-    bots = np.array([])  # add all the bots at runtime TODO replace with np.array
+    bots = set()  # add all the bots at runtime
     broker = "192.168.0.10"  # "test.mosquitto.org"
     port = 1883
     clientName = "COMPUTER"
@@ -44,13 +41,9 @@ def on_message(client, userdata, message):
 
     if message.topic == cred.topicSub.PARENT + '/' + cred.topicSub.BOTLIST:
         print(cred.topicSub.BOTLIST + " is selected")
-        chip_id = message.payload
-
-        # TODO - replace logic below with np.array for optimisation
-        if str(chip_id) not in cred.bots:
-            cred.bots = np.append(cred.bots, str(chip_id))  # check
-            print("New Bot added: " + str(chip_id))
-            print(cred.bots)
+        chip_id = int(message.payload)
+        cred.bots.add(chip_id)  # add bots to set
+        print("Updated list: " + str(cred.bots))
 
     elif message.topic == cred.topicSub.PARENT + '/' + cred.topicSub.ERROR:
         print(cred.topicSub.ERROR + " is selected")
@@ -64,6 +57,7 @@ def on_connect(client, userdata, flags, rc):
 def on_disconnect(client, userdata, rc):
     print("Client disconnected, attempting to reconnect")
     # TODO- Logic to reconnect
+    cred.bots.clear()  # clears the botlist on disconnection
 
 
 def on_subscribe(client, userdata, mid, granted_qos):
@@ -86,54 +80,49 @@ client.loop_start()  # threaded loop begins
 
 
 # Control (publisher) Methods, overloaded
-# First definition for Unloader control
-def control(chip_id,
-            motor: enums.motors = enums.motors.UNLOADER,
-            state: bool = False):
-    print("servo")
-    if state & \
-            (motor == enums.motors.UNLOADER) & \
-            (chip_id in cred.bots):
-        # prepare topic
-        topic = cred.topicPub.PARENT + '/' + str(chip_id) + '/' + str(0)  # enums.motors.UNLOADER does not work, so 0
-        # publish message
-        output = str(1 if state else 0)
-        client.publish(topic, payload=output)
-        print(topic + " is set to " + output)
+def control(chip_id: int, motor: int, **kwargs):
+    topic = cred.topicPub.PARENT + '/' + str(chip_id) + '/' + str(motor)
+    if chip_id in cred.bots and \
+            motor in range(enums.motors.UNLOADER, enums.motors.MOTOR_BOTH + 1):
+        if motor == enums.motors.UNLOADER:
+            for key, value in kwargs.items():
+                if (key == 'logic') and value:
+                    print("Unloading")
+                    client.publish(topic, payload=value)
+        else:  # if motors are selected
+            for key, value in kwargs.items():
+                if (key == 'direction') and \
+                        (value in range(enums.directions.Stop, enums.directions.Reverse + 1)):
+                    direction = int(value)
+                    client.publish(topic + '/' + str(cred.topicPub.DIRECTION), payload=direction)
+                    print("Published direction: " + str(direction) + " to " + str(motor))
+                if (key == 'pwm') and \
+                        (value in range(0, 1024)):
+                    pwm = int(value)
+                    client.publish(topic + '/' + str(cred.topicPub.PWM), payload=pwm)
+                    print("Setting pwm: " + str(pwm) + " to " + str(motor))
+    else:
+        print("Bot not present in set")
 
 
-# TODO redefine control() properly
-# # Second overload, for motor Direction control
-# def control(chip_id,
-#             motor: enums.motors,
-#             direction: enums.directions):
-#     if str(chip_id) in cred.bots:
-#         topic = cred.topicPub.PARENT + '/' + str(chip_id) + '/' + str(motor) + '/' + cred.topicPub.DIRECTION
-#         client.publish(topic, payload=direction)
-#         print(topic + "is set to " + str(direction))
-#
-#
-# # Third overload, for motor PWM control
-# def control(chip_id,
-#             motor: enums.motors,
-#             pwm: uint16):
-#     if str(chip_id) in cred.bots:
-#         topic = cred.topicPub.PARENT + '/' + str(chip_id) + '/' + str(motor) + '/' + cred.topicPub.PWM
-#         client.publish(topic, payload=pwm)
-#         print(topic + "is set to " + pwm)
-#
-#
-# # Final overload, for direction and PWM control
-# def control(chip_id,
-#             motor: enums.motors,
-#             direction: enums.directions,
-#             pwm: uint16):
-#     control(chip_id, motor, pwm)
-#     control(chip_id, motor, direction)
-
-# test loop
+# test loop showing some usages for standalone testing (running only mqtt_router.py)
+# instruction: just publish FromBot/Botlist=12936642 in mqtt explorer at the same IP
+# and let the fun begin
+# TODO remove/comment contents in loop after testing
 while True:
     print("Alive")
-    time.sleep(5)
+    time.sleep(2)
+    # demo 1: activating unloader
+    control(12936642, enums.motors.UNLOADER, logic=True)
+    time.sleep(2)
+    # demo 2: setting left motor forward direction
+    control(12936642, enums.motors.MOTOR_LEFT, direction=1)
+    time.sleep(2)
+    # demo 3: setting left motor pwm: 1023
+    control(12936642, enums.motors.MOTOR_LEFT, pwm=1023)
+    time.sleep(2)
+    # demo 4: setting both direction: reverse and pwm: 102 to left motor
+    control(12936642, enums.motors.MOTOR_LEFT, direction=2, pwm=102)
 
 # TODO call client.loop_stop() from main.py whenever exit/end event occurs
+
