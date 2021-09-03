@@ -108,21 +108,21 @@ def control(chip_id: int, motor: int, **kwargs):
 # test loop showing some usages for standalone testing (running only mqtt_router.py)
 # instruction: just publish FromBot/Botlist=12936642 in mqtt explorer at the same IP
 # and let the fun begin
-# TODO remove/comment contents in loop after testing
-while True:
-    print("Alive")
-    time.sleep(2)
-    # demo 1: activating unloader
-    control(12936642, enums.motors.UNLOADER, logic=True)
-    time.sleep(2)
-    # demo 2: setting left motor forward direction
-    control(12936642, enums.motors.MOTOR_LEFT, direction=1)
-    time.sleep(2)
-    # demo 3: setting left motor pwm: 1023
-    control(12936642, enums.motors.MOTOR_LEFT, pwm=1023)
-    time.sleep(2)
-    # demo 4: setting both direction: reverse and pwm: 102 to left motor
-    control(12936642, enums.motors.MOTOR_LEFT, direction=2, pwm=102)
+if __name__ == '__main__':
+    while True:
+        print("Alive")
+        time.sleep(2)
+        # demo 1: activating unloader
+        control(12936642, enums.motors.UNLOADER, logic=True)
+        time.sleep(2)
+        # demo 2: setting left motor forward direction
+        control(12936642, enums.motors.MOTOR_LEFT, direction=1)
+        time.sleep(2)
+        # demo 3: setting left motor pwm: 1023
+        control(12936642, enums.motors.MOTOR_LEFT, pwm=1023)
+        time.sleep(2)
+        # demo 4: setting both direction: reverse and pwm: 102 to left motor
+        control(12936642, enums.motors.MOTOR_LEFT, direction=2, pwm=102)
 
 # TODO call client.loop_stop() from main.py whenever exit/end event occurs
 
