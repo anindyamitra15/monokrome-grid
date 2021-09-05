@@ -1,4 +1,5 @@
-CMS/output.mp4
-CMS/__pycache__
-CMS/.idea
-/.idea/inspectionProfiles/Project_Default.xml
+CMS/*.mp4
+**/__pycache__
+.idea
+**/.idea
+Bot-code/Grid-3-Bots/include/config.h
