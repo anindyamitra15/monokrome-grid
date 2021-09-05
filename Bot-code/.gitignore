@@ -1,0 +1,8 @@
+Grid-3-Bots/.pio
+Grid-3-Bots/.vscode/.browse.c_cpp.db*
+Grid-3-Bots/.vscode/c_cpp_properties.json
+Grid-3-Bots/.vscode/launch.json
+Grid-3-Bots/.vscode/ipch
+Grid-3-Bots/.vscode/workspace.code-workspace
+Grid-3-Bots/include/config.h
+Grid-3-Bots/include/PINS.h
