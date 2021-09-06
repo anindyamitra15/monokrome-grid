@@ -58,7 +58,7 @@ if __name__ == '__main__':
             height, width, _ = frame.shape
             record_v = video_recorder(height, width)
             
-            #record_v.write(frame) #if recoding needed for basic image, can also be called to record the processed image only
+            #record_v.write(frame) #if recoding needed for basic image, can also be called later to record the processed image only
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             # realtime mask made using object detector, can be hard coded too..
             mask_obj_detector = object_detector.apply(frame)
