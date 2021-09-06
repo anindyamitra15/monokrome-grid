@@ -2,11 +2,12 @@ This folder contains all the source codes required for the central monitoring sy
 
 ## Folder Structure
 ```
-├── main.py         main script to run
-├── mqtt_router.py  contains mqtt connection script
-├── utilities.py    submodules containing numpy operations for cv
-├── detection.py    object detection method script
-└── README.md       Contains all the details about the source codes
+├── main.py               main script to run
+├── mqtt_router.py        contains mqtt connection script
+├── utilities.py          submodules containing numpy operations for cv
+├── detection.py          object detection method script
+├── hsv_range_finder.py   for finding hsv lower and upper ranges in colour coded parts
+└── README.md             Contains all the details about the source codes
 ```
 
 ## Instructions
