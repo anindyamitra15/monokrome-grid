@@ -50,7 +50,7 @@ typedef struct topic_publish
 topic_subscribe sub;
 topic_publish   pub;
 
-const unsigned long servo_unload_tick = 500;
+const unsigned long servo_unload_wait = 200;
 Servo unloader; //unloader servo object
 Motor left(L_PWM, L_PLUS, L_MINUS);
 Motor right(R_PWM, R_PLUS, R_MINUS);
@@ -143,13 +143,12 @@ void stop (bool brake)
 void unload (void)
 {
   stop(true);//stop and brake
-  unloader.write(0);
-  for(int i = 0; i <= UNLOAD_DEGREE; i++)
-  {
-    unloader.write(i);//slowly increases slope
-    delayMicroseconds(servo_unload_tick);
-  }
-  unloader.write(0);
+  unloader.write(SERVO_RESTING_DEGREE);
+  unloader.write(UNLOAD_DEGREE/2);
+  delay(servo_unload_wait);
+  unloader.write(UNLOAD_DEGREE);
+  delay(servo_unload_wait);
+  unloader.write(SERVO_RESTING_DEGREE);
   stop(false);//disable braking
 }
 
@@ -163,6 +162,7 @@ void io_init (void)
   pinMode(LED, OUTPUT);
   analogWriteFreq (PWM_FREQ);
   unloader.attach(SERVO_PIN);
+  unloader.write(SERVO_RESTING_DEGREE);
 }
 
 /**

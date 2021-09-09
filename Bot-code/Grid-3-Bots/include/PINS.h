@@ -32,6 +32,7 @@
 /*Servo output pin*/
 #define SERVO_PIN 15    //(D8)
 #define UNLOAD_DEGREE 90
+#define SERVO_RESTING_DEGREE 0
 
 /*Onboard LED on ESP8266*/
 #define LED 2
