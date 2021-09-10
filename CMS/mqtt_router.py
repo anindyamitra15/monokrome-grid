@@ -1,6 +1,7 @@
 import paho.mqtt.client as mqtt
 # import json  # required to parse FromBot/Error
 import time
+import atexit
 
 
 # Enums
@@ -105,10 +106,15 @@ def control(chip_id: int, motor: int, **kwargs):
         print("Bot not present in set")
 
 
+def on_exit():
+    client.loop_stop()
+
+
 # test loop showing some usages for standalone testing (running only mqtt_router.py)
 # instruction: just publish FromBot/Botlist=12936642 in mqtt explorer at the same IP
 # and let the fun begin
 if __name__ == '__main__':
+    atexit.register(on_exit)
     while True:
         print("Alive")
         time.sleep(2)
@@ -119,7 +125,7 @@ if __name__ == '__main__':
         control(7889076, enums.motors.MOTOR_LEFT, direction=1, pwm=250)
         time.sleep(2)
         # demo 3: setting left motor to stop
-        control(7889076, enums.motors.MOTOR_LEFT, direction=0, pwm=0)
+        control(7889076, enums.motors.MOTOR_LEFT, direction=enums.directions.Stop, pwm=0)
         time.sleep(2)
         # demo 4: setting left motor reverse direction
         control(7889076, enums.motors.MOTOR_LEFT, direction=2, pwm=250)
@@ -131,6 +137,4 @@ if __name__ == '__main__':
         control(7889076, enums.motors.MOTOR_LEFT, direction=0, pwm=0)
         # # demo 6: setting both direction: reverse and pwm: 102 to left motor
         # control(7889076, enums.motors.MOTOR_LEFT, direction=2, pwm=102)
-
 # TODO call client.loop_stop() from main.py whenever exit/end event occurs
-
