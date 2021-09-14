@@ -27,7 +27,7 @@
 //Out3 connects to Right Motor +ve
 #define R_PLUS 13 //connects to In3 (D7)
 //Out4 connects to Right Motor -ve
-#define R_MINUS 14 //connects to In4 (D2)
+#define R_MINUS 14 //connects to In4 (D5)
 
 /*Servo output pin*/
 #define SERVO_PIN 15    //(D8)
