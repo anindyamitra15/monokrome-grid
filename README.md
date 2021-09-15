@@ -3,7 +3,8 @@
 ## Folder Structure
 ```
 ├── Bot-code        Platform IO based arduino framework project
-├── CMS             Central Monitoring System, object tracking and MQTT client script 
+├── CMS             Central Monitoring System, object tracking and MQTT client script
+├── OpenCV-testing  CV testing code, will be added to CMS after successful run
 └── README.md       Contains all the details about the project
 ```
 
