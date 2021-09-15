@@ -7,7 +7,7 @@
  * Minimum frequency = 100Hz
  * Maximum frequency = 60000Hz
  */
-#define PWM_FREQ 200    //Hz
+#define PWM_FREQ 120    //Hz
 /*MOTOR L*/
 //Left Motor PWM
 #define L_PWM 12 //(D6)
