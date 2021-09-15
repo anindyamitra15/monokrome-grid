@@ -21,7 +21,7 @@ class enums:
 # globals storing topics and credentials
 class cred:
     bots = set()  # add all the bots at runtime
-    broker = "192.168.0.10"  # "test.mosquitto.org"
+    broker = "192.168.1.10"  # "test.mosquitto.org"
     port = 1883
     clientName = "COMPUTER"
 
