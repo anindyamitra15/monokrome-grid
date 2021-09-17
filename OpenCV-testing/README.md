@@ -1,5 +1,7 @@
 # OpenCV testing codes
 
+## nuke computer.py immediately, will create trouble afterwards
+
 ## will later nuke CMS and add these
 
 
