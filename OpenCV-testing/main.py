@@ -2,24 +2,26 @@ import utils
 import cv2
 from tracker import *
 import time
+import numpy as np
+import sys
 
-from mqtt_router import control, cred
-from arenatrack import obt
-from computer import comp
+from mqtt_router import *
+#from arenatrack import obt
+#from computer import comp
 
 
-tracker = EuclideanDistTracker()
+#tracker = EuclideanDistTracker()
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
-object_detector = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=10)
+#object_detector = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=10)
 
 
 def change_res(width, height):
     cap.set(3,width)
     cap.set(4,height)
 
-#change_res(1920,1080)
+change_res(1920,1080)
 dist=[]
 start=True
 mid=False
@@ -27,7 +29,7 @@ drop=False
 Return= False
 End=False
 straight=True
-id=0
+
 '''
 while 1:
     if cred.bots:
@@ -35,70 +37,76 @@ while 1:
         print('id:',id)
         break
 '''
-pl=obt()
-print('pppppllllll::',pl)
+# pl=obt()
+# print('pppppllllll::',pl)
 while True:
-    
     ret, frame = cap.read()
-    
-    #TODO: Check the height and width of your frame and put it in line 26
-    height, width, _ = frame.shape
-    #print(height, width)
-    #break
+    # roi = frame[:, 350: 550]  #to be used later
 
-    #time.sleep()
+    cnv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    if ret is False:
+        sys.exit()
+    else:
+        # all bots have same colour, my plan is to hard code mqtt to gib instructions
+        # to a bot for a definite amount of time and then switch to the next bot
+        # and use an exit sequence to trigger exit after the above procedure happens 4 times
+        # hsv space of bot colour
+        lower_hue = 0
+        lower_saturation = 165
+        lower_value = 74
+        upper_hue = 179
+        upper_saturation = 255
+        upper_value = 255
 
-    #print("Manish",height,width)
-    #time.delay(5)
-    
-    roi = frame[:,350: 550]
 
-    
-    '''
-    mask = object_detector.apply(roi)
-    _, mask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    '''
-    detections = []
-    '''
-    for cnt in contours:
-        
-        
-        area = cv2.contourArea(cnt)
-        print(area) #TODO: check the area of your bot and accordingly set the if condition
-        time.sleep(0.951)
-        
-        
-        if 50< area < 100:
-            
-            x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(roi,(x,y),(x+w,y+h),(230,45,189)) 
-    '''  
-    x,y,w,h=pl[0][0],pl[0][1],pl[0][2],pl[0][3]
-    
-    detections.append([x+400, y+200, w, h])
+        lower, upper = np.array([lower_hue, lower_saturation, lower_value]), np.array([upper_hue, upper_saturation, upper_value])
 
-    boxes_ids = tracker.update(detections)
-    
-    for box_id in boxes_ids:
-        x, y, w, h, id = box_id
-        
-        
-        cv2.putText(roi, str(id), (x, y - 15), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 5)
-        cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 3)
-        cofbot=((x+w//2),(y+h//2))
-        fofbot=(((x+w)-x)//2,y)
-        cv2.circle(roi,cofbot,3,(0,0,255),-1)
-        #cv2.putText(frame, str(time.time()), (x, y - 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 5)
-        
+        #cv2.imshow("hsv", cnv_frame)
+        mask = cv2.inRange(cnv_frame, lower, upper)
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+
+        img = cv2.bitwise_and(frame, frame, mask=mask)
+
+        cv2.imshow('maskedddd', mask)
+
+        # problems arising with contour detection, to be solved
+        # will use mask.copy() at final stage as img gets modified in find contours func
+
+        contours, h = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #cv2.imshow("After contour detection", mask)
+
+        cnts = sorted(contours, key=cv2.contourArea, reverse=True)[:1]  # stores first 10 largest contour points
+        #time.sleep(5)
+        c = max(cnts, key=cv2.contourArea)
+        #print(cnts[0])
+        # for cnt in contours:
+        #     #print('haha')
+        x, y, w, h = cv2.boundingRect(c)
+        #
+        #     break
+        if w > 10:
+            # draw the circle and centroid on the frame,
+            # then update the list of tracked points
+            cv2.rectangle(frame, (int(x), int(y)), (int(x + w), int(y + h)),
+                          (0, 255, 255), 2)
+            cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), 2, (0, 0, 255), -1)
+            text = "({},{})".format(int(x + w / 2), int(y + h / 2))
+            #cv2.putText(frame, text, (int(x), int(y - 10)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
+            #print(text)
+        cofbot = ((x + w // 2), (y + h // 2))
+        fofbot = (x + w // 2, y)
+        #cv2.circle(frame, cofbot, 3, (0, 0, 255), -1)
+
+
         if not Return:
 
-            endpnt=(15,200) # TODO: #d1 point
+            endpnt=(50,80) # TODO: #d1 point
         else:
             endpnt=(150,220) # TODO: #s1 point 
 
-        cv2.circle(roi,endpnt,7,(0,0,255),-1)
-        
+        cv2.circle(frame,endpnt,7,(0,0,255),-1)
+        roi=frame
 
         xy=utils.std(cofbot,endpnt)
         cv2.circle(roi,xy,5,(0,0,255),-1)
@@ -107,6 +115,7 @@ while True:
         cv2.arrowedLine(roi,cofbot,fofbot,(100,100,100),3, cv2.LINE_AA)
         straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
         cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+        cv2.imshow("Frame", frame)
         if not Return:
             dist1=utils.dist(cofbot,xy)
             dist2=utils.dist(xy,endpnt)
@@ -114,20 +123,37 @@ while True:
             dist2r=utils.dist(cofbot,xy)
             dist1r=utils.dist(xy,endpnt)
 
+        #control(7892874, 1, direction=1, pwm=250)
 
-        
+        control(7892874, 3, direction=0)
         # 0-> stop
         # 1 -> forward
         # 2 -> right
         # 3-> left
-        '''
-        if not mid:
-            mid=utils.checker(id,dist,dist1)
-        #print(mid)
-        if start and not mid:
-            continue
+
+        #if not mid:
+            #mid=utils.checker(id,dist,dist1)
+        id = 7893554
+        if(utils.checker(dist,dist1)):
+                print("stop")
+                control(id, 1, direction=0, pwm=0)
+                control(id, 2, direction=0, pwm=0)
+
         else:
-            # start=False
+            print("forward")
+            control(id, 1, direction=1, pwm=250)
+            control(id, 2, direction=1, pwm=250)
+
+
+        print(mid)
+
+
+
+
+        if start and mid:
+            print("now take aaaaaaknvlnrc;eml;emv;l")
+
+            start=False
             #print(mid)
             straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
             cv2.line(roi,cofbot,fofbot,(0,0,0),7)
@@ -136,51 +162,57 @@ while True:
             print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(theta)
             print("Now chwck id and rotate accordingly!............")
+
             if not straight:
-                if (id<2):
+                if (id==7892874):
                     control(id, 2, direction=1)
                     control(id,3,direction=0)
-                    print("turning right 90deg")
-                    
+                    print("turning right 90deg",id )
+
                 else:
                     control(id,1,direction=1)
                     control(id,3,direction=0)
-                    print("turning left 90deg") 
+                    print("turning left 90deg",id )
             print(dist,dist2)
             drop=utils.checker(dist,dist2)
             print(dist,dist2,"d2")
-            #print(drop)
-            if mid and not drop:
-                continue
-            else:
-                #TODO: Throw package command
+            print(drop) #TODO: Throw package command
+
+
+            if mid and drop:
+
                 control(id,3,direction=0)
                 if Return:
                     start=False
                 if drop:
                     Return=True
+
+        
         if Return :
             print("returning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print("rotating!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!----------------------------")
             if (id<2):
-                comp(2)
-                comp(0)
+                control(12345678, 1, direction='1', pwm='650')  #calibrate pwm
+                control(12345678, 2, direction='0', pwm='0')   #calibrate pwm if req
+                control(12345678, 3, direction='0', pwm='0')
                 print("turning right 90deg")
-                
+
             else:
-                comp(3)
-                comp(0)
+                control(12345678, 2, direction='1', pwm='650')  #calibrate pwm
+                control(12345678, 1, direction='0', pwm='0')   #calibrate pwm if req
+                control(12345678, 3, direction='0', pwm='0')
                 print("turning left 90deg")
+            '''
             if (id<2):
                 comp(2)
                 comp(0)
                 print("turning right 90deg")
-                
+
             else:
                 comp(3)
                 comp(0)
                 print("turning left 90deg")
-
+            '''
             mid=False
             drop=False
         if not start and Return and drop:
@@ -192,13 +224,13 @@ while True:
             Return= False
             End=False
             straight=True
-    '''
-    
+
+
     if ret:
         cv2.imshow("Frame", frame)
-        cv2.imshow("roi", roi)
+        #cv2.imshow("roi", roi)
         #cv2.imshow("mask", mask)
-    time.sleep(0.095)
+    #time.sleep(0.095)
 
     if cv2.waitKey(1) & 0xff == ord('q'):
         break
