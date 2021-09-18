@@ -26,6 +26,7 @@ dist=[]
 start=True
 turnj=False
 mid=False
+midr=False
 drop=False
 Return= False
 End=False
@@ -105,12 +106,12 @@ while True:
             flag=False
         if start:
             fofbot = (x + w // 2, y)
-        elif turnj:
-            fofbot=(x,y+h//2)
-        elif Return:
-            fofbot=(x+w,y+h//2)
         elif End:
             fofbot=(x+w//2,y+h)
+        elif turnj:
+            fofbot=(x+w,y+h//2)
+        elif Return:
+            fofbot=(x,y+h//2)
               
         #cv2.circle(frame, cofbot, 3, (0, 0, 255), -1)
 
@@ -162,7 +163,7 @@ while True:
 
             else:
                 print("forward")
-                control(id, 1, direction=1, pwm=320)
+                control(id, 1, direction=1, pwm=300)
                 control(id, 2, direction=1, pwm=300)
 
 
@@ -184,18 +185,15 @@ while True:
             print(theta)
             print("Now chwck id and rotate accordingly!............")
             #control(id, 3, direction=0,pwm=0)
-            i=10
-            while i:
-                i-=1
-                control(id, 1, direction=1,pwm=500)
-                control(id, 2, direction=2,pwm=500)
-
-            #time.sleep(1.095)
-                # control(id, 1, direction=0,pwm=0)
-                # control(id, 2, direction=0,pwm=0)
-            mid=False
-            turnj=True #TODO: DELETE
-            pwm=250
+            if not Return:
+                i=10
+                while i:
+                    i-=1
+                    control(id, 1, direction=1,pwm=500)
+                    control(id, 2, direction=2,pwm=500)
+                mid=False
+            turnj=True
+        
             '''
             if not straight:
                 if (id==7892874):
@@ -214,29 +212,42 @@ while True:
                 turnj=True
             '''
         if turnj:
-            # mid=False
-            print(dist,dist2)
-            drop=utils.checker(dist,dist2)
-            print(dist,dist2,"d2")
             if not Return:
+            # mid=False
+                print(dist,dist2)
+                drop=utils.checker(dist,dist2)
+                print(dist,dist2,"d2")
                 print(drop) #TODO: Throw package command
-            if(drop):
-                print("stop")
-                #control(id, 3, direction=0, pwm=0)
-                control(id, 1, direction=0, pwm=0)
-                control(id, 2, direction=0, pwm=0)
+                if(drop):
+                    print("stop")
+                    #control(id, 3, direction=0, pwm=0)
+                    control(id, 1, direction=0, pwm=0)
+                    control(id, 2, direction=0, pwm=0)
 
 
-            else:
-                pwm-=10
-                print("forward")
-                #control(id, 3, direction=1, pwm=pwm)
-                control(id, 1, direction=1, pwm=250)
-                control(id, 2, direction=1, pwm=250)
+                else:
+                    print("forward")
+                    #control(id, 3, direction=1, pwm=pwm)
+                    control(id, 1, direction=1, pwm=250)
+                    control(id, 2, direction=1, pwm=250)
             if Return:
                 End=True
-                drop=False
-                print("stop")
+                drop=utils.checker(dist,dist2)
+                if(drop):
+                    drop=False
+                    Return = False
+                    print("stop")
+                    #control(id, 3, direction=0, pwm=0)
+                    control(id, 1, direction=0, pwm=0)
+                    control(id, 2, direction=0, pwm=0)
+
+
+                else:
+                    print("forward")
+                    #control(id, 3, direction=1, pwm=pwm)
+                    control(id, 1, direction=1, pwm=250)
+                    control(id, 2, direction=1, pwm=250)
+                # drop = False
             if drop:
                 print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
             
@@ -283,13 +294,35 @@ while True:
                 print("turning left 90deg")
             '''
         
-        if Return:
-            mid=utils.checker(dist,dist1)
+        if Return and not End:
+            midr=utils.checker(dist,dist1)
     
-            if(mid):
+            if midr and not turnj:
                 print("stop")
                 control(id, 1, direction=0, pwm=0)
                 control(id, 2, direction=0, pwm=0)
+                print("now take aaaaaaknvlnrc;eml;emv;l")
+                
+                #print(mid)
+                straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
+                cv2.line(roi,cofbot,fofbot,(0,0,0),7)
+                cv2.line(roi,cofbot,endpnt,(0,0,0),7)
+                cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+                print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print(theta)
+                print("Now chwck id and rotate accordingly!............")
+                i=12
+                while i:
+                    i-=1
+                    control(id, 1, direction=1,pwm=550)
+                    control(id, 2, direction=2,pwm=550)
+                midr=False
+                #control(id, 3, direction=0,pwm=0)
+                #time.sleep(1.095)
+                    # control(id, 1, direction=0,pwm=0)
+                    # control(id, 2, direction=0,pwm=0)
+                turnj=True #TODO: DELETE
+
 
 
             else:
@@ -304,17 +337,20 @@ while True:
             # mid=False
             # drop=False
             print("returning")
-        
-        if not start and End:
+        '''
+        if End and utils.checker(dist,dist2):
             print("DONNNEEEEEE-------------------------------------------------------------------.........")
+            control(id, 1, direction=0,pwm=0)
+            control(id, 2, direction=0,pwm=0)
             id+=1
+            '''
             start=True
             mid=False
             drop=False
             Return= False
             End=False
             straight=True
-        '''
+            '''
 
     if ret:
         cv2.imshow("Frame", frame)
