@@ -24,6 +24,7 @@ def change_res(width, height):
 change_res(1920,1080)
 dist=[]
 start=True
+turnj=False
 mid=False
 drop=False
 Return= False
@@ -39,6 +40,7 @@ while 1:
 '''
 # pl=obt()
 # print('pppppllllll::',pl)
+flag=True
 while True:
     ret, frame = cap.read()
     # roi = frame[:, 350: 550]  #to be used later
@@ -52,8 +54,8 @@ while True:
         # and use an exit sequence to trigger exit after the above procedure happens 4 times
         # hsv space of bot colour
         lower_hue = 0
-        lower_saturation = 165
-        lower_value = 74
+        lower_saturation = 140
+        lower_value = 165
         upper_hue = 179
         upper_saturation = 255
         upper_value = 255
@@ -83,6 +85,8 @@ while True:
         # for cnt in contours:
         #     #print('haha')
         x, y, w, h = cv2.boundingRect(c)
+        #roi = frame[x:x+w,y:y+h]
+        #cv2.imshow("Roi",roi)
         #
         #     break
         if w > 10:
@@ -95,62 +99,79 @@ while True:
             #cv2.putText(frame, text, (int(x), int(y - 10)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
             #print(text)
         cofbot = ((x + w // 2), (y + h // 2))
-        fofbot = (x + w // 2, y)
+        
+        if flag:
+            s1=cofbot
+            flag=False
+        if start:
+            fofbot = (x + w // 2, y)
+        elif turnj:
+            fofbot=(x,y+h//2)
+        elif Return:
+            fofbot=(x+w,y+h//2)
+        elif End:
+            fofbot=(x+w//2,y+h)
+              
         #cv2.circle(frame, cofbot, 3, (0, 0, 255), -1)
 
 
         if not Return:
 
-            endpnt=(50,80) # TODO: #d1 point
+            endpnt=(1400,325) # TODO: #d1 point
         else:
-            endpnt=(150,220) # TODO: #s1 point 
+            endpnt=s1 # TODO: #s1 point 
 
         cv2.circle(frame,endpnt,7,(0,0,255),-1)
         roi=frame
-
-        xy=utils.std(cofbot,endpnt)
+        if not Return:
+            xy=utils.std(cofbot,endpnt)
+        else:
+            xy=utils.std(endpnt,cofbot)
         cv2.circle(roi,xy,5,(0,0,255),-1)
         cv2.line(roi,cofbot,xy,(122,122,210),7)
         cv2.line(roi,xy,endpnt,(122,122,10),7)
         cv2.arrowedLine(roi,cofbot,fofbot,(100,100,100),3, cv2.LINE_AA)
-        straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-        cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+        #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
+        #cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
         cv2.imshow("Frame", frame)
         if not Return:
             dist1=utils.dist(cofbot,xy)
             dist2=utils.dist(xy,endpnt)
         else:
-            dist2r=utils.dist(cofbot,xy)
-            dist1r=utils.dist(xy,endpnt)
+            dist1=utils.dist(cofbot,xy)
+            dist2=utils.dist(xy,endpnt)
 
         #control(7892874, 1, direction=1, pwm=250)
 
-        control(7892874, 3, direction=0)
+        #control(7892874, 3, direction=0)
         # 0-> stop
         # 1 -> forward
         # 2 -> right
         # 3-> left
-
-        #if not mid:
-            #mid=utils.checker(id,dist,dist1)
-        id = 7893554
-        if(utils.checker(dist,dist1)):
+        idl = [7892874,7893554]
+        id=idl[1]
+        if start :
+        
+            mid=utils.checker(dist,dist1)
+    
+            if(mid):
                 print("stop")
                 control(id, 1, direction=0, pwm=0)
                 control(id, 2, direction=0, pwm=0)
 
-        else:
-            print("forward")
-            control(id, 1, direction=1, pwm=250)
-            control(id, 2, direction=1, pwm=250)
+
+            else:
+                print("forward")
+                control(id, 1, direction=1, pwm=320)
+                control(id, 2, direction=1, pwm=300)
 
 
-        print(mid)
+            print('kgklhlvijgl', start,mid)
 
 
 
-
-        if start and mid:
+        
+        if mid:
             print("now take aaaaaaknvlnrc;eml;emv;l")
 
             start=False
@@ -158,50 +179,98 @@ while True:
             straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
             cv2.line(roi,cofbot,fofbot,(0,0,0),7)
             cv2.line(roi,cofbot,endpnt,(0,0,0),7)
-            #cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+            cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
             print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(theta)
             print("Now chwck id and rotate accordingly!............")
+            #control(id, 3, direction=0,pwm=0)
+            i=10
+            while i:
+                i-=1
+                control(id, 1, direction=1,pwm=500)
+                control(id, 2, direction=2,pwm=500)
 
+            #time.sleep(1.095)
+                # control(id, 1, direction=0,pwm=0)
+                # control(id, 2, direction=0,pwm=0)
+            mid=False
+            turnj=True #TODO: DELETE
+            pwm=250
+            '''
             if not straight:
                 if (id==7892874):
-                    control(id, 2, direction=1)
-                    control(id,3,direction=0)
-                    print("turning right 90deg",id )
+                    control(id, 2, direction=1,pwm=300)
+                    control(id,3,direction=0,pwm=0)
+                    print("turning left 90deg",id )
+                    #qtime.sleep(2)
+                    straight = True
 
                 else:
                     control(id,1,direction=1)
                     control(id,3,direction=0)
-                    print("turning left 90deg",id )
+                    print("turningright 90deg",id )
+            else:
+                control(id,3,direction=0,pwm=0)
+                turnj=True
+            '''
+        if turnj:
+            # mid=False
             print(dist,dist2)
             drop=utils.checker(dist,dist2)
             print(dist,dist2,"d2")
-            print(drop) #TODO: Throw package command
+            if not Return:
+                print(drop) #TODO: Throw package command
+            if(drop):
+                print("stop")
+                #control(id, 3, direction=0, pwm=0)
+                control(id, 1, direction=0, pwm=0)
+                control(id, 2, direction=0, pwm=0)
 
-
-            if mid and drop:
-
-                control(id,3,direction=0)
-                if Return:
-                    start=False
-                if drop:
-                    Return=True
-
-        
-        if Return :
-            print("returning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("rotating!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!----------------------------")
-            if (id<2):
-                control(12345678, 1, direction='1', pwm='650')  #calibrate pwm
-                control(12345678, 2, direction='0', pwm='0')   #calibrate pwm if req
-                control(12345678, 3, direction='0', pwm='0')
-                print("turning right 90deg")
 
             else:
-                control(12345678, 2, direction='1', pwm='650')  #calibrate pwm
-                control(12345678, 1, direction='0', pwm='0')   #calibrate pwm if req
-                control(12345678, 3, direction='0', pwm='0')
-                print("turning left 90deg")
+                pwm-=10
+                print("forward")
+                #control(id, 3, direction=1, pwm=pwm)
+                control(id, 1, direction=1, pwm=250)
+                control(id, 2, direction=1, pwm=250)
+            if Return:
+                End=True
+                drop=False
+                print("stop")
+            if drop:
+                print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
+            
+
+
+        if drop:
+            turnj=False
+            control(id, 2, direction=0,pwm=0)
+            control(id, 1, direction=0,pwm=0)
+            control(id,0,logic=1)
+            
+        
+            if drop:
+                
+                Return=True
+            drop=False
+        
+            
+
+        
+        
+            # print("returning!")
+            # print("rotating!----------------------------")
+            # if (id<2):
+            #     control(12345678, 1, direction=2, pwm='200')  #calibrate pwm
+            #     control(12345678, 2, direction='0', pwm='0')   #calibrate pwm if req
+            #     control(12345678, 3, direction='0', pwm='0')
+            #     print("turning right 90deg")
+
+            # else:
+            #     control(12345678, 2, direction='1', pwm='200')  #calibrate pwm
+            #     control(12345678, 1, direction='0', pwm='0')   #calibrate pwm if req
+            #     control(12345678, 3, direction='0', pwm='0')
+            #     print("turning left 90deg")
             '''
             if (id<2):
                 comp(2)
@@ -213,9 +282,30 @@ while True:
                 comp(0)
                 print("turning left 90deg")
             '''
-            mid=False
-            drop=False
-        if not start and Return and drop:
+        
+        if Return:
+            mid=utils.checker(dist,dist1)
+    
+            if(mid):
+                print("stop")
+                control(id, 1, direction=0, pwm=0)
+                control(id, 2, direction=0, pwm=0)
+
+
+            else:
+                print("reverse")
+                control(id, 3, direction=2, pwm=300)
+                # control(id, 1, direction=2, pwm=300)
+                # control(id, 2, direction=2, pwm=300)
+
+            '''
+            print('kgklhlvijgl',Return,mid)
+
+            # mid=False
+            # drop=False
+            print("returning")
+        
+        if not start and End:
             print("DONNNEEEEEE-------------------------------------------------------------------.........")
             id+=1
             start=True
@@ -224,13 +314,13 @@ while True:
             Return= False
             End=False
             straight=True
-
+        '''
 
     if ret:
         cv2.imshow("Frame", frame)
         #cv2.imshow("roi", roi)
         #cv2.imshow("mask", mask)
-    #time.sleep(0.095)
+    #time.sleep(0.05)
 
     if cv2.waitKey(1) & 0xff == ord('q'):
         break

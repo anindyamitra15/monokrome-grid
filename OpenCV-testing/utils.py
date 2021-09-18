@@ -48,22 +48,22 @@ def anglechecker(centre,pt1,edge):
 
     #print(theta)
     if theta<0:
-        theta+=180
+        theta=-(theta)
     if theta<=5:
         return True, theta
     return val, theta
 
-def checker(id,dist,dist1):
+def checker(dist,dist1):
     #print(dist,dist1)
     val=False
     if dist:
         
-        if(dist1<=5):
+        if(dist1<=25):
             #print(dist1)
             dist1=0
             dist.pop()
             print("stop")
-            control(id,3,direction=0)
+            
             # dist1=dist2
                 
             val = True
@@ -72,8 +72,7 @@ def checker(id,dist,dist1):
             dist.pop()
             dist.append(dist1)
             print("forward")
-            control(id,3,direction=1)
-            control(id,3,direction=0)
+           
     else:
         #if dist1:
         dist.append(dist1)

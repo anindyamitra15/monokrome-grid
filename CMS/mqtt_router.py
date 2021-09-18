@@ -119,22 +119,22 @@ if __name__ == '__main__':
         print("Alive")
         time.sleep(2)
         # demo 1: activating unloader
-        control(7889076, enums.motors.UNLOADER, logic=True)
+        control(7892874, enums.motors.UNLOADER, logic=True)
         time.sleep(2)
         # demo 2: setting left motor forward direction
-        control(7889076, enums.motors.MOTOR_LEFT, direction=1, pwm=250)
+        control(7892874, enums.motors.MOTOR_BOTH, direction=1, pwm=250)
         time.sleep(2)
         # demo 3: setting left motor to stop
-        control(7889076, enums.motors.MOTOR_LEFT, direction=enums.directions.Stop, pwm=0)
+        control(7892874, enums.motors.MOTOR_BOTH, direction=enums.directions.Stop, pwm=0)
         time.sleep(2)
         # demo 4: setting left motor reverse direction
-        control(7889076, enums.motors.MOTOR_LEFT, direction=2, pwm=250)
+        control(7892874, enums.motors.MOTOR_BOTH, direction=2, pwm=250)
         time.sleep(2)
         # demo 5: setting left motor pwm: 1023
-        control(7889076, enums.motors.MOTOR_LEFT, pwm=1023)
+        control(7892874, enums.motors.MOTOR_BOTH, pwm=1023)
         time.sleep(2)
         # demo 3: setting left motor to stop
-        control(7889076, enums.motors.MOTOR_LEFT, direction=0, pwm=0)
+        control(7892874, enums.motors.MOTOR_BOTH, direction=0, pwm=0)
         # # demo 6: setting both direction: reverse and pwm: 102 to left motor
         # control(7889076, enums.motors.MOTOR_LEFT, direction=2, pwm=102)
 # TODO call client.loop_stop() from main.py whenever exit/end event occurs
