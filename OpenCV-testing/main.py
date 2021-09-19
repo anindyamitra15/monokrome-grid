@@ -28,6 +28,7 @@ turnj=False
 mid=False
 midr=False
 drop=False
+dropr=False
 Return= False
 End=False
 straight=True
@@ -157,14 +158,16 @@ while True:
     
             if(mid):
                 print("stop")
-                control(id, 1, direction=0, pwm=0)
-                control(id, 2, direction=0, pwm=0)
+                control(id, 3, direction=0, pwm=0)
+                # control(id, 1, direction=0, pwm=0)
+                # control(id, 2, direction=0, pwm=0)
 
 
             else:
                 print("forward")
-                control(id, 1, direction=1, pwm=300)
-                control(id, 2, direction=1, pwm=300)
+                #control(id, 3, direction=1, pwm=200)
+                control(id, 1, direction=1, pwm=200)
+                control(id, 2, direction=1, pwm=200)
 
 
             print('kgklhlvijgl', start,mid)
@@ -228,14 +231,16 @@ while True:
                 else:
                     print("forward")
                     #control(id, 3, direction=1, pwm=pwm)
-                    control(id, 1, direction=1, pwm=250)
-                    control(id, 2, direction=1, pwm=250)
+                    control(id, 1, direction=1, pwm=300)
+                    control(id, 2, direction=1, pwm=300)
             if Return:
                 End=True
+                
                 drop=utils.checker(dist,dist2)
                 if(drop):
-                    drop=False
+                    #drop=False
                     Return = False
+                    dropr=True
                     print("stop")
                     #control(id, 3, direction=0, pwm=0)
                     control(id, 1, direction=0, pwm=0)
@@ -252,12 +257,15 @@ while True:
                 print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
             
 
-
-        if drop:
+        
+        if drop :
+            
             turnj=False
             control(id, 2, direction=0,pwm=0)
             control(id, 1, direction=0,pwm=0)
-            control(id,0,logic=1)
+            if not dropr:
+                control(id,0,logic=1)
+            
             
         
             if drop:
@@ -295,6 +303,7 @@ while True:
             '''
         
         if Return and not End:
+            dropr=True
             midr=utils.checker(dist,dist1)
     
             if midr and not turnj:
@@ -340,8 +349,9 @@ while True:
         '''
         if End and utils.checker(dist,dist2):
             print("DONNNEEEEEE-------------------------------------------------------------------.........")
-            control(id, 1, direction=0,pwm=0)
-            control(id, 2, direction=0,pwm=0)
+            control(id, 3, direction=0,pwm=0)
+            # control(id, 1, direction=0,pwm=0)
+            # control(id, 2, direction=0,pwm=0)
             id+=1
             '''
             start=True
