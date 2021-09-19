@@ -166,8 +166,8 @@ while True:
             else:
                 print("forward")
                 #control(id, 3, direction=1, pwm=200)
-                control(id, 1, direction=1, pwm=200)
-                control(id, 2, direction=1, pwm=200)
+                control(id, 1, direction=1, pwm=279)
+                control(id, 2, direction=1, pwm=290)
 
 
             print('kgklhlvijgl', start,mid)
