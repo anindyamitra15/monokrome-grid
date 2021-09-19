@@ -166,8 +166,19 @@ while True:
             else:
                 print("forward")
                 #control(id, 3, direction=1, pwm=200)
+                val=utils.pid(cofbot,xy)
+                if val==1:
+                    control(id, 1, direction=1, pwm=279)
+                    control(id, 2, direction=1, pwm=100)
+                    print('lefffttttttt ppppiiiddddddddddddddd')
+                elif val==2:
+                    control(id, 2, direction=1, pwm=279)
+                    control(id, 1, direction=1, pwm=100)
+                    print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
+                    
                 control(id, 1, direction=1, pwm=279)
                 control(id, 2, direction=1, pwm=290)
+
 
 
             print('kgklhlvijgl', start,mid)

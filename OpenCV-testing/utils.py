@@ -25,6 +25,14 @@ def std(a,b):
     return (x,y)
 def frontofbot():
     pass
+def pid(cofbot,dest):
+    cob=cofbot[0]-dest[0]
+    if cob>10:
+        return 1
+    elif cob<-10:
+        return 2
+
+
 def anglechecker(centre,pt1,edge):
     val=False
     x,y=centre[0],centre[1]
