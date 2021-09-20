@@ -21,7 +21,7 @@
 //Out1 connects to Left Motor +ve
 #define L_PLUS 4 //connects to In1 (D2)
 //Out2 connects to Left Motor -ve
-#define L_MINUS 5 //connects to In2 (D1)
+#define L_MINUS 0//5 //connects to In2 (D1)
 
 /*MOTOR R*/
 //Out3 connects to Right Motor +ve
@@ -31,12 +31,15 @@
 
 /*Servo output pin*/
 #define SERVO_PIN 15    //(D8)
+
 #define UNLOAD_DEGREE 90
 #define SERVO_RESTING_DEGREE 0
 
 /*Onboard LED on ESP8266*/
 #define LED 2
+
+#define CONFIG_PIN 5
 /**
  * refer to Bot-code/README for ESP-12E pin configurations
- * 
+ * TODO - revert all the pins carefully
 */

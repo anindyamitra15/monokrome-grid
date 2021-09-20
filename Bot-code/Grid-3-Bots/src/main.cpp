@@ -54,9 +54,10 @@ const unsigned long servo_unload_wait = 40;
 Servo unloader; //unloader servo object
 Motor left(L_PWM, L_PLUS, L_MINUS);
 Motor right(R_PWM, R_PLUS, R_MINUS);
+WiFiManager wm;
 WiFiClient wifiClient;
 MqttClient mqttClient (wifiClient);
-
+volatile bool is_connected_wifi = true;
 /*==============Function Prototypes====================*/
 
 void io_init(void);
@@ -77,6 +78,7 @@ void mqttMessageHandler(int messageSize); //Change definition
 direction parseDirection(String);
 uint16_t parsePWM(String);
 String getLastTopic(String);
+void wifiConfigMode();
 
 /*=========Setup=========*/
 void setup () {
@@ -104,13 +106,14 @@ void loop () {
   mqttClient.poll();
 
   //on disconnection behavior
+  is_connected_wifi = digitalRead(CONFIG_PIN);
   static uint8_t fire = 0;
-  if (wifiClient.status() == WL_CONNECTION_LOST)
+  if (wifiClient.status() == WL_CONNECTION_LOST || !is_connected_wifi)
   {
     fire++;
-    if (fire > 3)
+    if (fire > 3 || !is_connected_wifi)
     {
-      wifi_init();
+      wifiConfigMode();
       mqtt_init();
       fire = 0;
     }
@@ -161,6 +164,7 @@ void io_init (void)
 {
   left.begin();
   right.begin();
+  pinMode(CONFIG_PIN, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
   analogWriteFreq (PWM_FREQ);
   unloader.attach(SERVO_PIN);
@@ -169,7 +173,6 @@ void io_init (void)
 
 /**
  * MQTT initialising function
- * //TODO - debug
 */
 bool mqtt_init ()
 {
@@ -194,15 +197,14 @@ bool mqtt_init ()
 */
 void wifi_init (void)
 {
-  WiFiManager wifi;
-  wifi.setDebugOutput(false);
-  wifi.setTimeout(300);
-  wifi.setAPCallback(configModeCallback);
+  wm.setDebugOutput(false);
+  wm.setTimeout(300);
+  wm.setAPCallback(configModeCallback);
   uint32_t id = ESP.getChipId();
   Serial.print("\n\nChip ID: ");
   Serial.println(id);
   String ap_name = "MQTTBot_" + String(id);
-  if (!wifi.autoConnect(ap_name.c_str(), "12345678"))
+  if (!wm.autoConnect(ap_name.c_str(), "12345678"))
   {
     Serial.println("Couldn't Connect to remote AP");
     ESP.restart();
@@ -378,6 +380,43 @@ void mqttMessageHandler (int messageSize)
 }
 
 /*=============Lower level functions============*/
+
+/**
+ * ISR for config mode interrupt
+ */
+void wifiConfigMode()
+{
+  is_connected_wifi = true;
+  Serial.println("Entering config mode...(by AKM)");
+  if(is_connected_wifi)
+  {
+    Serial.println("Dropping old connection");
+    is_connected_wifi = false;
+    // logic to reconnect
+
+    //reset settings - for testing
+    wm.resetSettings();
+
+    // set configportal timeout
+    wm.setConfigPortalTimeout(120);
+
+    if (!wm.startConfigPortal("OnDemandAP"))
+    {
+      Serial.println("failed to connect and hit timeout");
+      delay(3000);
+      //reset and try again, or maybe put it to deep sleep
+      ESP.restart();
+      delay(5000);
+    }
+
+    //if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
+  }else{
+    Serial.println("Already in config mode!");
+  }
+  ESP.restart();
+  delay(5000);
+}
 
 
 /**
