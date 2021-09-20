@@ -110,13 +110,19 @@ void loop () {
   // on re-config behavior
   static uint32_t lastCount = 0;
   static uint8_t c = 0;
-  if (!digitalRead(CONFIG_PIN))
+  if ((!digitalRead(CONFIG_PIN)))
+  {
     if (millis() - lastCount > 1000)
     {
       c++;
       lastCount = millis();
       Serial.println(c);
     }
+  }
+  else
+  {
+    c = 0;
+  }
   if (c >= CONFIG_COUNT)
   {
     wifiClearConfig();
@@ -403,7 +409,6 @@ void mqttMessageHandler (int messageSize)
  */
 void wifiClearConfig()
 {
-  Serial.println("Entering config mode...(by AKM)");
   Serial.println("Dropping old connection");
   //reset settings - for testing
   wm.resetSettings();
