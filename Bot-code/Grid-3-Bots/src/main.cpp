@@ -14,6 +14,7 @@
 #define TOPIC_SUB "ToBot"
 #define TOPIC_PUB "FromBot"
 #define SLASH String('/')
+#define CONFIG_COUNT 3
 /*====Topics Macros====*/
 
 /*=======Globals=======*/
@@ -51,6 +52,7 @@ topic_subscribe sub;
 topic_publish   pub;
 
 const unsigned long servo_unload_wait = 40;
+
 Servo unloader; //unloader servo object
 Motor left(L_PWM, L_PLUS, L_MINUS);
 Motor right(R_PWM, R_PLUS, R_MINUS);
@@ -78,7 +80,7 @@ void mqttMessageHandler(int messageSize); //Change definition
 direction parseDirection(String);
 uint16_t parsePWM(String);
 String getLastTopic(String);
-void wifiConfigMode();
+void wifiClearConfig();
 
 /*=========Setup=========*/
 void setup () {
@@ -105,15 +107,30 @@ void setup () {
 void loop () {
   mqttClient.poll();
 
+  // on re-config behavior
+  static uint32_t lastCount = 0;
+  static uint8_t c = 0;
+  if (!digitalRead(CONFIG_PIN))
+    if (millis() - lastCount > 1000)
+    {
+      c++;
+      lastCount = millis();
+      Serial.println(c);
+    }
+  if (c >= CONFIG_COUNT)
+  {
+    wifiClearConfig();
+    c = 0;
+  }
+
   //on disconnection behavior
-  is_connected_wifi = digitalRead(CONFIG_PIN);
   static uint8_t fire = 0;
-  if (wifiClient.status() == WL_CONNECTION_LOST || !is_connected_wifi)
+  if (wifiClient.status() == WL_CONNECTION_LOST)
   {
     fire++;
-    if (fire > 3 || !is_connected_wifi)
+    if (fire > 3)
     {
-      wifiConfigMode();
+      wifi_init();
       mqtt_init();
       fire = 0;
     }
@@ -382,40 +399,35 @@ void mqttMessageHandler (int messageSize)
 /*=============Lower level functions============*/
 
 /**
- * ISR for config mode interrupt
+ * Clears the wifi config
  */
-void wifiConfigMode()
+void wifiClearConfig()
 {
-  is_connected_wifi = true;
   Serial.println("Entering config mode...(by AKM)");
-  if(is_connected_wifi)
-  {
-    Serial.println("Dropping old connection");
-    is_connected_wifi = false;
-    // logic to reconnect
+  Serial.println("Dropping old connection");
+  //reset settings - for testing
+  wm.resetSettings();
 
-    //reset settings - for testing
-    wm.resetSettings();
+  //   // set configportal timeout
+  //   wm.setConfigPortalTimeout(120);
 
-    // set configportal timeout
-    wm.setConfigPortalTimeout(120);
+  //   if (!wm.startConfigPortal("OnDemandAP"))
+  //   {
+  //     Serial.println("failed to connect and hit timeout");
+  //     delay(3000);
+  //     //reset and try again, or maybe put it to deep sleep
+  //     ESP.restart();
+  //     delay(5000);
+  //   }
 
-    if (!wm.startConfigPortal("OnDemandAP"))
-    {
-      Serial.println("failed to connect and hit timeout");
-      delay(3000);
-      //reset and try again, or maybe put it to deep sleep
-      ESP.restart();
-      delay(5000);
-    }
-
-    //if you get here you have connected to the WiFi
-    Serial.println("connected...yeey :)");
-  }else{
-    Serial.println("Already in config mode!");
-  }
-  ESP.restart();
-  delay(5000);
+  //   //if you get here you have connected to the WiFi
+  //   Serial.println("connected...yeey :)");
+  // }else{
+  //   Serial.println("Already in config mode!");
+  // }
+  // ESP.restart();
+  // delay(5000);
+  ESP.reset();
 }
 
 
