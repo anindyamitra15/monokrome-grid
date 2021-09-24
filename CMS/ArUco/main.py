@@ -1,9 +1,14 @@
+#code might not work on individual machines if opencv-contrib is not installed
+
 import cv2 as cv
 import numpy as np
 
 # Load the dictionary that was used to generate the markers.
 dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_250)
-capture = cv.VideoCapture("Arena4Bot2Mov-ArUco.mp4")
+capture = cv.VideoCapture("Arena4Bot2Mov-ArUco.mp4")  #input your saved video/ webcam feed
+
+#code basically merges aruco params obtained from hsv space and original img into a single frame
+#gives better detection capability
 
 def callback():
     pass
