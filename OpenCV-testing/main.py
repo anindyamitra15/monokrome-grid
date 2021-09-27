@@ -4,6 +4,7 @@ from tracker import *
 import time
 import numpy as np
 import sys
+import json
 
 from mqtt_router import *
 #from arenatrack import obt
@@ -33,6 +34,17 @@ Return= False
 End=False
 straight=True
 
+file_name = "HSV_Data.json"
+with open(file_name, "r") as openfile:
+    # Reading from json file
+    hsv_json = json.load(openfile)
+lower_hue = hsv_json['lower_hue']
+lower_saturation = hsv_json['lower_saturation']
+lower_value = hsv_json['lower_value']
+upper_hue = hsv_json['upper_hue']
+upper_saturation = hsv_json['upper_saturation']
+upper_value = hsv_json['upper_value']
+
 '''
 while 1:
     if cred.bots:
@@ -55,13 +67,13 @@ while True:
         # all bots have same colour, my plan is to hard code mqtt to gib instructions
         # to a bot for a definite amount of time and then switch to the next bot
         # and use an exit sequence to trigger exit after the above procedure happens 4 times
-        # hsv space of bot colour
-        lower_hue = 0
-        lower_saturation = 120
-        lower_value = 146
-        upper_hue = 11
-        upper_saturation = 255
-        upper_value = 255
+        # hsv space of bot colour goes to globals ok?
+        # lower_hue = 0
+        # lower_saturation = 120
+        # lower_value = 146
+        # upper_hue = 11
+        # upper_saturation = 255
+        # upper_value = 255
 
 
         lower, upper = np.array([lower_hue, lower_saturation, lower_value]), np.array([upper_hue, upper_saturation, upper_value])
@@ -103,7 +115,7 @@ while True:
                 #cv2.putText(frame, text, (int(x), int(y - 10)), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
                 #print(text)
             cofbot = ((x + w // 2), (y + h // 2))
-            
+
             if flag:
                 s1=cofbot
                 flag=False
@@ -115,7 +127,7 @@ while True:
                 fofbot=(x+w,y+h//2)
             elif Return:
                 fofbot=(x,y+h//2)
-                
+
             #cv2.circle(frame, cofbot, 3, (0, 0, 255), -1)
 
 
@@ -123,7 +135,7 @@ while True:
 
                 endpnt=(1400,125) # TODO: #d1 point
             else:
-                endpnt=s1 # TODO: #s1 point 
+                endpnt=s1 # TODO: #s1 point
 
             cv2.circle(frame,endpnt,7,(0,0,255),-1)
             roi=frame
@@ -156,9 +168,9 @@ while True:
             idl = [7892874,7893554]
             id=idl[1]
             if start :
-            
+
                 mid=utils.checker(dist,dist1)
-        
+
                 if(mid):
                     print("stop")
                     control(id, 3, direction=0, pwm=0)
@@ -187,7 +199,7 @@ while True:
 
 
 
-            
+
             if mid:
                 print("now take aaaaaaknvlnrc;eml;emv;l")
 
@@ -209,7 +221,7 @@ while True:
                         control(id, 2, direction=2,pwm=500)
                     mid=False
                 turnj=True
-            
+
                 '''
                 if not straight:
                     if (id==7892874):
@@ -229,7 +241,7 @@ while True:
                 '''
             if turnj:
                 if not Return:
-                # mid=False
+                    # mid=False
                     print(dist,dist2)
                     drop=utils.checker(dist,dist2)
                     print(dist,dist2,"d2")
@@ -248,7 +260,7 @@ while True:
                         control(id, 2, direction=1, pwm=300)
                 if Return:
                     End=True
-                    
+
                     drop=utils.checker(dist,dist2)
                     if(drop):
                         #drop=False
@@ -268,28 +280,28 @@ while True:
                     # drop = False
                 if drop:
                     print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
-                
 
-            
+
+
             if drop :
-                
+
                 turnj=False
                 control(id, 2, direction=0,pwm=0)
                 control(id, 1, direction=0,pwm=0)
                 if not dropr:
                     control(id,0,logic=1)
-                
-                
-            
+
+
+
                 if drop:
-                    
+
                     Return=True
                 drop=False
-            
-                
 
-            
-            
+
+
+
+
                 # print("returning!")
                 # print("rotating!----------------------------")
                 # if (id<2):
@@ -314,17 +326,17 @@ while True:
                     comp(0)
                     print("turning left 90deg")
                 '''
-            
+
             if Return and not End:
                 dropr=True
                 midr=utils.checker(dist,dist1)
-        
+
                 if midr and not turnj:
                     print("stop")
                     control(id, 1, direction=0, pwm=0)
                     control(id, 2, direction=0, pwm=0)
                     print("now take aaaaaaknvlnrc;eml;emv;l")
-                    
+
                     #print(mid)
                     straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
                     cv2.line(roi,cofbot,fofbot,(0,0,0),7)
@@ -341,8 +353,8 @@ while True:
                     midr=False
                     #control(id, 3, direction=0,pwm=0)
                     #time.sleep(1.095)
-                        # control(id, 1, direction=0,pwm=0)
-                        # control(id, 2, direction=0,pwm=0)
+                    # control(id, 1, direction=0,pwm=0)
+                    # control(id, 2, direction=0,pwm=0)
                     turnj=True #TODO: DELETE
 
 
@@ -383,7 +395,7 @@ while True:
 
     if cv2.waitKey(1) & 0xff == ord('q'):
         break
-    
+
 
 cap.release()
 cv2.destroyAllWindows()
