@@ -1,4 +1,5 @@
 import cv2
+import json
 from numpy import *
 import sys
 
@@ -40,17 +41,34 @@ def hsv_space_detector():
 
             stack = hstack((mask_3, rgb_frame, res))
             cv2.imshow('Trackbars', cv2.resize(stack, None, fx=0.4, fy=0.4))
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # exit on "Q" keypress
-                upper_lower_array = array([[lower_hue, lower_saturation, lower_value], [upper_hue, upper_saturation, upper_value]])
-                print(upper_lower_array)
-                return upper_lower_array
-                break
+            wait = cv2.waitKey(1) & 0xFF
+            if wait == ord('n'):  # just exit on "n" keypress
+                return False
+            if wait == ord('y'): # save the HSV space in a new file on "y" keypress
+                # upper_lower_array = array(
+                #     [[lower_hue, lower_saturation, lower_value],
+                #      [upper_hue, upper_saturation, upper_value]])
+                # print(upper_lower_array)
+                print("dumping the values in a json file...")
+                dictionary = {
+                    "lower_hue" : int(lower_hue),
+                    "lower_saturation" : int(lower_saturation),
+                    "lower_value" : int(lower_value),
+                    "upper_hue" : int(upper_hue),
+                    "upper_saturation" : int(upper_saturation),
+                    "upper_value" : int(upper_value)
+                }
+                print(dictionary)
+                json_object = json.dumps(dictionary, indent = 4)
+                file_name = "HSV_Data.json"
+                with open(file_name, "w") as outfile:
+                    outfile.write(json_object)
+                return True
         cap.release()
         cv2.destroyAllWindows()
     except:
         print("Camera not working...stopping execution")
         sys.exit()
 
-var = hsv_space_detector()
-#print(var)
+if __name__ == "__main__":
+    print("Values saved!" if hsv_space_detector() else "Exiting without saving")
