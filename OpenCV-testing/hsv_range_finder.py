@@ -52,5 +52,5 @@ def hsv_space_detector():
         print("Camera not working...stopping execution")
         sys.exit()
 
-#var = hsv_space_detector()
+var = hsv_space_detector()
 #print(var)
