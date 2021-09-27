@@ -3,3 +3,4 @@ CMS/*.mp4
 .idea
 **/.idea
 Bot-code/Grid-3-Bots/include/config.h
+HSV_Data.json
