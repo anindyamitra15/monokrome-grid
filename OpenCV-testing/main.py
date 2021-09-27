@@ -130,7 +130,7 @@ while True:
             if not Return and fxy:
                 xy=utils.std(cofbot,endpnt)
                 fxy = False
-            elif turnj and not fxy:
+            elif Return and not fxy:
                 xy=utils.std(endpnt,cofbot)
             cv2.circle(roi,xy,5,(0,0,255),-1)
             cv2.line(roi,cofbot,xy,(122,122,210),7)
