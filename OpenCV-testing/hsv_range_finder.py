@@ -61,7 +61,7 @@ def hsv_space_detector():
                 print(dictionary)
                 json_object = json.dumps(dictionary, indent = 4)
                 file_name = "HSV_Data_Day.json"
-                file_name = "HSV_Data_Night.json"
+                #file_name = "HSV_Data_Night.json"
                 with open(file_name, "w") as outfile:
                     outfile.write(json_object)
                 return True
