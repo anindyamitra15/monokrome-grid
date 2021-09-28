@@ -1,14 +1,9 @@
-#code might not work on individual machines if opencv-contrib is not installed
-
 import cv2 as cv
 import numpy as np
 
 # Load the dictionary that was used to generate the markers.
-dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_250)
-capture = cv.VideoCapture("Arena4Bot2Mov-ArUco.mp4")  #input your saved video/ webcam feed
-
-#code basically merges aruco params obtained from hsv space and original img into a single frame
-#gives better detection capability
+dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_1000)
+capture = cv.VideoCapture("Arena4Bot2Mov-ArUco.mp4")
 
 def callback():
     pass
@@ -41,10 +36,8 @@ def hsv_space_finder():
     return np.array([lower_hue, lower_saturation, lower_value]), np.array([upper_hue, upper_saturation, upper_value])
 
 
-while True:
+while capture.isOpened():
     isTrue, frame = capture.read()
-    if not isTrue:
-        break
     # frame calibration
     frame = rescaleFrame(frame, 0.7)
     cv.imshow("Original", frame)
@@ -65,9 +58,19 @@ while True:
     markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(frame, dictionary, parameters=parameters)
     markerCorners1, markerIds1, rejectedCandidates1 = cv.aruco.detectMarkers(frame_cnv, dictionary, parameters=parameters)
     #print(markerIds)
-    # cc = np.where(markerIds == 0)
-    # c = int(cc[0][0])
+    #cc = np.where(markerIds == 0)
+    #c = int(cc[0][0])
     # cv.rectangle(frame_resized , (int(markerCorners[c][0][0][0]) , int(markerCorners[c][0][0][1])) , (int(markerCorners[c][0][2][0]) , int(markerCorners[c][0][2][1])) , (0, 255 , 0) , thickness = 2)
+    try:
+        try:
+           x, y = (markerCorners[0][0][0][0] + markerCorners[0][0][2][0]) // 2, (markerCorners[0][0][0][1] + markerCorners[0][0][2][1]) // 2
+           cv.circle(frame, (int(x), int(y)), 3, (255, 0, 0), 2)  #x,y centre of bot
+        except:
+            x, y = (markerCorners1[0][0][0][0] + markerCorners1[0][0][2][0]) // 2, (
+                        markerCorners1[0][0][0][1] + markerCorners1[0][0][2][1]) // 2
+            cv.circle(frame, (int(x), int(y)), 3, (255, 0, 0), 2)  # x,y centre of bot
+    except:
+        print("Aruco not detected")
 
     cv.aruco.drawDetectedMarkers(frame, markerCorners)
     cv.aruco.drawDetectedMarkers(frame, markerCorners1)
