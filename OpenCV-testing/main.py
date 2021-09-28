@@ -34,7 +34,8 @@ Return= False
 End=False
 straight=True
 
-file_name = "HSV_Data.json"
+file_name = "HSV_Data_Day.json"
+#file_name = "HSV_Data_Night.json"
 with open(file_name, "r") as openfile:
     # Reading from json file
     hsv_json = json.load(openfile)
