@@ -39,12 +39,12 @@ file_name = "HSV_Data_Day.json"
 with open(file_name, "r") as openfile:
     # Reading from json file
     hsv_json = json.load(openfile)
-lower_hue = hsv_json['lower_hue']
-lower_saturation = hsv_json['lower_saturation']
-lower_value = hsv_json['lower_value']
-upper_hue = hsv_json['upper_hue']
-upper_saturation = hsv_json['upper_saturation']
-upper_value = hsv_json['upper_value']
+    lower_hue = hsv_json['lower_hue']
+    lower_saturation = hsv_json['lower_saturation']
+    lower_value = hsv_json['lower_value']
+    upper_hue = hsv_json['upper_hue']
+    upper_saturation = hsv_json['upper_saturation']
+    upper_value = hsv_json['upper_value']
 
 '''
 while 1:
