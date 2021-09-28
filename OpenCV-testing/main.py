@@ -10,13 +10,18 @@ from mqtt_router import *
 #from arenatrack import obt
 #from computer import comp
 
-
 #tracker = EuclideanDistTracker()
 
 cap = cv2.VideoCapture(0)
 
 #object_detector = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=10)
 
+
+def rescaleFrame(frame , scale = 0.5):
+    width = int(frame.shape[1] * scale)
+    height = int(frame.shape[0] * scale)
+    dimensions = (width , height)
+    return cv2.resize(frame , dimensions , interpolation= cv2.INTER_AREA)
 
 def change_res(width, height):
     cap.set(3,width)
@@ -34,8 +39,8 @@ Return= False
 End=False
 straight=True
 
-file_name = "HSV_Data_Day.json"
-#file_name = "HSV_Data_Night.json"
+#file_name = "HSV_Data_Day.json"
+file_name = "HSV_Data_Night.json"
 with open(file_name, "r") as openfile:
     # Reading from json file
     hsv_json = json.load(openfile)
@@ -86,7 +91,7 @@ while True:
 
         img = cv2.bitwise_and(frame, frame, mask=mask)
 
-        cv2.imshow('maskedddd', mask)
+        cv2.imshow('maskedddd', rescaleFrame(mask))
 
         # problems arising with contour detection, to be solved
         # will use mask.copy() at final stage as img gets modified in find contours func
@@ -118,7 +123,7 @@ while True:
             cofbot = ((x + w // 2), (y + h // 2))
 
             if flag:
-                s1=cofbot
+                s1=cofbot #TODO - ArUco gibs the position of S1-S4 and D1-D4
                 flag=False
             if start:
                 fofbot = (x + w // 2, y)
@@ -134,7 +139,7 @@ while True:
 
             if not Return:
 
-                endpnt=(1400,125) # TODO: #d1 point
+                endpnt=(1400,150) # TODO: #d1 point
             else:
                 endpnt=s1 # TODO: #s1 point
 
@@ -151,7 +156,6 @@ while True:
             cv2.arrowedLine(roi,cofbot,fofbot,(100,100,100),3, cv2.LINE_AA)
             #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
             #cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
-            cv2.imshow("Frame", frame)
             if not Return:
                 dist1=utils.dist(cofbot,xy)
                 dist2=utils.dist(xy,endpnt)
@@ -389,7 +393,7 @@ while True:
             '''
 
     if ret:
-        cv2.imshow("Frame", frame)
+        cv2.imshow("Frame", rescaleFrame(frame))
         #cv2.imshow("roi", roi)
         #cv2.imshow("mask", mask)
     #time.sleep(0.05)
