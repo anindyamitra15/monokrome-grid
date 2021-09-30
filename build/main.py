@@ -97,7 +97,10 @@ cv.putText(fr,
 cv.imshow('Image', rescaleFrame(fr))
 cv.waitKey(0)
 cv.destroyAllWindows()
+
 # flags initialisation
+S1 = Point[831]
+S2 = Point[832]
 
 dist=[]
 start=[True]*4
@@ -112,8 +115,12 @@ straight=[True]*4
 
 print("Code Starts")
 # while loop
+n = 0
 while True:
     ret, frame= cap.read()
+
+    if cv.waitKey(1) & 0xff == ord('q'):
+        break
 
 
     #algo 
@@ -129,9 +136,9 @@ while True:
         dist2=utils.dist(xy,endpnt)
     if start :
 
-        mid=utils.checker(dist,dist1)
+        mid[n]=utils.checker(dist,dist1)
 
-        if(mid):
+        if(mid[n]):
             print("stop")
             control(id, 3, direction=0, pwm=0)
             # control(id, 1, direction=0, pwm=0)
@@ -337,6 +344,6 @@ while True:
         control(id, 3, direction=0,pwm=0)
         # control(id, 1, direction=0,pwm=0)
         # control(id, 2, direction=0,pwm=0)
-        id+=1
+        n+=1
 cap.release()
 cv.destroyAllWindows()
