@@ -88,6 +88,17 @@ cv.putText(fr,
 cv.imshow('Image', rescaleFrame(fr))
 cv.waitKey(0)
 # flags initialisation
+dist=[]
+start=[True]*4
+turnj=[False]*4
+mid=[False]*4
+midr=[False]*4
+drop=[False]*4
+dropr=[False]*4
+Return=[False]*4
+End=[False]*4
+straight=[True]*4
+
 print("Code Starts")
 # while loop
 
