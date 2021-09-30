@@ -1,6 +1,7 @@
 import cv2 as cv
 import sys
 import numpy as np
+from aruco_pos_finder import *
 import Bots
 import Inducts
 import mqtt_router
@@ -19,31 +20,35 @@ def rescaleFrame(frame, scale=0.7):
     dimensions = (width, height)
     return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
 
-
-while cap.isOpened():
+# Dictionary to store the ids and coordinates
+Point = dict()
+# Confirmation Loop
+while True:
     ret, frm = cap.read()
 
     w = cv.waitKey(1) & 0xff
+
     if w == ord('c'):
-        fr = frm.copy()
-        cv.destroyAllWindows()
-        break
+            print(Point)
+            fr = frm.copy()
+            cv.destroyAllWindows()
+            break
 
     if w == ord('q'):
         cap.release()
         cv.destroyAllWindows()
         sys.exit()
 
-    frm = rescaleFrame(frm)
     parameters = cv.aruco.DetectorParameters_create()
     # Detect the markers in the image
     markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
         frm, dictionary, parameters=parameters)
     if (markerIds is not None):
+        
         for a in markerIds:
             cc = np.where(markerIds == a[0])
             c = int(cc[0][0])
-            s = str(a[0])
+            s = str(Inducts.get(a[0]))
             x = int(markerCorners[c][0][0][0])
             y = int(markerCorners[c][0][0][1])
             cv.putText(frm,
@@ -51,7 +56,10 @@ while cap.isOpened():
                     cv.FONT_HERSHEY_PLAIN,
                     1, (255, 0, 255),
                     thickness=1)
-            c = c + 1
+            center = ((x + int(markerCorners[c][0][2][0])) // 2), ((y + int(markerCorners[c][0][2][1])) // 2)
+            cv.circle(frm, center, 4, (0, 0, 255), -1)
+            Point[a[0]] = center
+
         cv.aruco.drawDetectedMarkers(frm, markerCorners)
     cv.putText(frm,
                "Press 'c' to capture or 'q' to exit!",
@@ -59,7 +67,7 @@ while cap.isOpened():
                cv.FONT_HERSHEY_PLAIN,
                1.7, (255, 0, 255),
                thickness=2)
-    cv.imshow("Choose your frame", frm)
+    cv.imshow("Choose your frame", rescaleFrame(frm))
 
 
 
@@ -87,6 +95,7 @@ cv.putText(fr,
             thickness=2)
 cv.imshow('Image', rescaleFrame(fr))
 cv.waitKey(0)
+cv.destroyAllWindows()
 # flags initialisation
 print("Code Starts")
 # while loop

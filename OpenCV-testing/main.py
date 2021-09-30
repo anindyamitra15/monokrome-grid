@@ -62,6 +62,7 @@ while 1:
 # print('pppppllllll::',pl)
 flag=True
 fxy = True
+
 while True:
     ret, frame = cap.read()
     # roi = frame[:, 350: 550]  #to be used later
