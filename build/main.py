@@ -156,12 +156,12 @@ while True:
 
         start=False
         #print(mid)
-        straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-        cv2.line(roi,cofbot,fofbot,(0,0,0),7)
-        cv2.line(roi,cofbot,endpnt,(0,0,0),7)
-        cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+        #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
+        # cv2.line(roi,cofbot,fofbot,(0,0,0),7)
+        # cv2.line(roi,cofbot,endpnt,(0,0,0),7)
+        # cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
         print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print(theta)
+        #print(theta)
         print("Now chwck id and rotate accordingly!............")
         #control(id, 3, direction=0,pwm=0)
         if not Return:
@@ -289,12 +289,12 @@ while True:
             print("now take aaaaaaknvlnrc;eml;emv;l")
 
             #print(mid)
-            straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-            cv2.line(roi,cofbot,fofbot,(0,0,0),7)
-            cv2.line(roi,cofbot,endpnt,(0,0,0),7)
-            cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+            # straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
+            # cv2.line(roi,cofbot,fofbot,(0,0,0),7)
+            # cv2.line(roi,cofbot,endpnt,(0,0,0),7)
+            # cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
             print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(theta)
+            #print(theta)
             print("Now chwck id and rotate accordingly!............")
             i=12
             while i:
