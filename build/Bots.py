@@ -15,9 +15,10 @@ key_list = list(A.keys())
 val_list = list(A.values())
 
 # ========Methods=========
+# Method to get the chip Ids
 def get_id(num):
     return A[num]
-
+#Method to get the ArUco numbers
 def get_num(id):
     return key_list[val_list.index(id)]
 

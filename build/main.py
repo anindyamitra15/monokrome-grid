@@ -1,19 +1,20 @@
 import cv2 as cv
 import sys
 import numpy as np
-from aruco_pos_finder import *
 import Bots
 import Inducts
 from mqtt_router import control
 import utils
 
 # camera initialise
+frame_timing = 1 # in milliseconds
 cap = cv.VideoCapture(0)
 cap.set(4, 1080)
 cap.set(3, 1920)
 
 #ArUco variables init
 dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_1000)
+parameters = cv.aruco.DetectorParameters_create()
 
 def rescaleFrame(frame, scale=0.7):
     width = int(frame.shape[1] * scale)
@@ -23,45 +24,55 @@ def rescaleFrame(frame, scale=0.7):
 
 # Dictionary to store the ids and coordinates
 Point = dict()
-# Confirmation Loop
+# Arena confirmation Loop
+# Loop 1
 while True:
     ret, frm = cap.read()
 
-    w = cv.waitKey(1) & 0xff
-
-    if w == ord('c'):
-            print(Point)
-            fr = frm.copy()
-            cv.destroyAllWindows()
-            break
+    w = cv.waitKey(frame_timing) & 0xff
 
     if w == ord('q'):
         cap.release()
         cv.destroyAllWindows()
         sys.exit()
 
-    parameters = cv.aruco.DetectorParameters_create()
     # Detect the markers in the image
     markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
         frm, dictionary, parameters=parameters)
     if (markerIds is not None):
-        
         for a in markerIds:
             cc = np.where(markerIds == a[0])
             c = int(cc[0][0])
             s = str(Inducts.get(a[0]))
-            x = int(markerCorners[c][0][0][0])
-            y = int(markerCorners[c][0][0][1])
+            Point[a[0]] = utils.find_coordinates(markerCorners, c)
+            (x,y) = Point[a[0]][1]
             cv.putText(frm,
                     s, (x, y),
                     cv.FONT_HERSHEY_PLAIN,
                     1, (255, 0, 255),
                     thickness=1)
-            center = ((x + int(markerCorners[c][0][2][0])) // 2), ((y + int(markerCorners[c][0][2][1])) // 2)
+            center = Point[a[0]][0]
             cv.circle(frm, center, 4, (0, 0, 255), -1)
-            Point[a[0]] = center
+
+
+        # Logic for showing paths
+        if set(Inducts.SD.keys()).issubset(Point.keys()):
+            for i in range(0, 4):
+                S = Point[Inducts.key_list[i]][0] # S point
+                D = Point[Inducts.key_list[i+4]][0] # D point
+                M = (S[0], D[1]) # Mid point
+                cv.circle(frm, M, 4, (0, 0, 255), -1)
+                cv.line(frm, S, M, (164, 73, 163), 2)
+                cv.line(frm, D, M, (164, 73, 163), 2)
 
         cv.aruco.drawDetectedMarkers(frm, markerCorners)
+
+        if w == ord('c'):
+            print(Point)
+            fr = frm.copy()
+            cv.destroyAllWindows()
+            break
+
     cv.putText(frm,
                "Press 'c' to capture or 'q' to exit!",
                (10, 50),
@@ -70,26 +81,9 @@ while True:
                thickness=2)
     cv.imshow("Choose your frame", rescaleFrame(frm))
 
-
-
-# ArUco Detection
-parameters =  cv.aruco.DetectorParameters_create()
-# Detect the markers in the image
-markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(fr , dictionary, parameters=parameters)
-if(markerIds is not None):
-    for a in markerIds:
-        cc = np.where(markerIds == a[0])
-        c = int(cc[0][0])
-        s = str(Inducts.get(a[0]))
-        x = int(markerCorners[c][0][0][0])
-        y = int(markerCorners[c][0][0][1])
-        cv.putText(fr , s , (x,y) , cv.FONT_HERSHEY_PLAIN , 1 , (255 , 0 , 255) , thickness=1)
-        c = c+1
-
-
-cv.aruco.drawDetectedMarkers(fr , markerCorners)
+# Confirmation Snapshot
 cv.putText(fr,
-            "Press 'R' to start execution!",
+            "Press any key, after you have placed all the bots!",
             (10, 50),
             cv.FONT_HERSHEY_PLAIN,
             2.5, (255, 0, 255),
@@ -98,6 +92,49 @@ cv.imshow('Image', rescaleFrame(fr))
 cv.waitKey(0)
 cv.destroyAllWindows()
 
+# To detect the bot positions on Source inducts
+Location = dict()
+# Loop 2
+while True:
+    ret, frm = cap.read()
+
+    if cv.waitKey(frame_timing) & 0xff == ord('p'):
+        print(Point)
+        break
+
+    # Detect the markers in the image
+    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
+        frm, dictionary, parameters=parameters)
+    if (markerIds is not None):
+        for a in markerIds:
+            cc = np.where(markerIds == a[0])
+            c = int(cc[0][0])
+            s = str(Inducts.get(a[0]))
+            Point[a[0]] = utils.find_coordinates(markerCorners, c)
+            (x, y) = Point[a[0]][1]
+            cv.putText(frm,
+                       s, (x, y),
+                       cv.FONT_HERSHEY_PLAIN,
+                       1, (255, 0, 255),
+                       thickness=1)
+            center = Point[a[0]][0]
+            cv.circle(frm, center, 4, (0, 0, 255), -1)
+            
+        for k in Bots.key_list:
+            center = Point[k][0]
+            for l in range(0, 4):
+                id = Inducts.key_list[l]
+                coordinates = Point[id]
+                if center[0] in range(coordinates[1][0], coordinates[2][0]):
+                    Location[Bots.get_id(k)] = id
+
+    cv.putText(frm, "Press 'p' to start execution!",
+            (10, 50),
+            cv.FONT_HERSHEY_PLAIN,
+            2.5, (255, 0, 255),
+            thickness=2)
+    cv.imshow("Frame", rescaleFrame(frm))
+print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 # flags initialisation
 S1 = Point[831]
 S2 = Point[832]
@@ -115,6 +152,7 @@ straight=[True]*4
 
 print("Code Starts")
 # while loop
+sys.exit() # TODO - remove this line
 n = 0
 while True:
     ret, frame= cap.read()
@@ -123,11 +161,11 @@ while True:
         break
 
 
-    #algo 
-        
+    #algo
+
     #i want cofbot, xy and endpnt
     cofbot=xy=endpnt=(0,0)
-    
+
     if not Return:
         dist1=utils.dist(cofbot,xy)
         dist2=utils.dist(xy,endpnt)
@@ -173,9 +211,9 @@ while True:
         start=False
         #print(mid)
         #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-        # cv2.line(roi,cofbot,fofbot,(0,0,0),7)
-        # cv2.line(roi,cofbot,endpnt,(0,0,0),7)
-        # cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+        # cv.line(roi,cofbot,fofbot,(0,0,0),7)
+        # cv.line(roi,cofbot,endpnt,(0,0,0),7)
+        # cv.putText(roi, str(theta), (cofbot), cv.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
         print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         #print(theta)
         print("Now chwck id and rotate accordingly!............")
@@ -306,9 +344,9 @@ while True:
 
             #print(mid)
             # straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-            # cv2.line(roi,cofbot,fofbot,(0,0,0),7)
-            # cv2.line(roi,cofbot,endpnt,(0,0,0),7)
-            # cv2.putText(roi, str(theta), (cofbot), cv2.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
+            # cv.line(roi,cofbot,fofbot,(0,0,0),7)
+            # cv.line(roi,cofbot,endpnt,(0,0,0),7)
+            # cv.putText(roi, str(theta), (cofbot), cv.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
             print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             #print(theta)
             print("Now chwck id and rotate accordingly!............")

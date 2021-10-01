@@ -51,7 +51,6 @@ def anglechecker(centre,pt1,edge):
         theta=90
     else:
         rad=atan((m2-m1)/(1+(m1*m2)))
-        
         theta=round(degrees(rad))
 
     #print(theta)
@@ -65,22 +64,19 @@ def checker(dist,dist1):
     #print(dist,dist1)
     val=False
     if dist:
-        
         if(dist1<=35):
             #print(dist1)
             dist1=0
             dist.pop()
             print("stop")
-            
             # dist1=dist2
-                
             val = True
-            
+
         elif(dist1<dist[-1]):
             dist.pop()
             dist.append(dist1)
             print("forward")
-           
+
     else:
         #if dist1:
         dist.append(dist1)
@@ -88,12 +84,26 @@ def checker(dist,dist1):
     #     # else:
     #     #     dist.append(dist2)
     #     #     print(dist2)
-
-    
     return val
 
-
-
-    
-
-
+'''
+utilities for ArUco Marker Position calculations
+returns the list containing 3 tuples
+1.Center coordinates
+2. Top Left Corner coodinates
+3. Bottom Right Corner coordinates
+'''
+def find_coordinates (markerCorners, c):
+    center = (
+        ((int(markerCorners[c][0][0][0]) + int(markerCorners[c][0][2][0])) // 2),
+        ((int(markerCorners[c][0][0][1]) + int(markerCorners[c][0][2][1])) // 2)
+        )
+    left_top_corner = (
+                int(markerCorners[c][0][0][0]),
+                int(markerCorners[c][0][0][1])
+                )
+    right_bottom_corner = (
+                int(markerCorners[c][0][2][0]),
+                int(markerCorners[c][0][2][1])
+                )
+    return [center, left_top_corner, right_bottom_corner]
