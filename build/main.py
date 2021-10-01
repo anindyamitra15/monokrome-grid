@@ -3,20 +3,23 @@ import sys
 import numpy as np
 import Bots
 import Inducts
-from mqtt_router import control
+from mqtt_router import control, on_exit
 import utils
 
 # camera initialise
 frame_timing = 1 # in milliseconds
-cap = cv.VideoCapture(0)
-cap.set(4, 1080)
-cap.set(3, 1920)
+cap = cv.VideoCapture(0, cv.CAP_DSHOW)
+cap.set(cv.CAP_PROP_FPS, 30.0)
+cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter.fourcc('m', 'j', 'p', 'g'))
+cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
 #ArUco variables init
 dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_1000)
 parameters = cv.aruco.DetectorParameters_create()
 
-def rescaleFrame(frame, scale=0.7):
+def rescaleFrame(frame, scale=1):
     width = int(frame.shape[1] * scale)
     height = int(frame.shape[0] * scale)
     dimensions = (width, height)
@@ -34,6 +37,7 @@ while True:
     if w == ord('q'):
         cap.release()
         cv.destroyAllWindows()
+        on_exit()
         sys.exit()
 
     # Detect the markers in the image
@@ -119,7 +123,7 @@ while True:
                        thickness=1)
             center = Point[a[0]][0]
             cv.circle(frm, center, 4, (0, 0, 255), -1)
-            
+
         for k in Bots.key_list:
             center = Point[k][0]
             for l in range(0, 4):
@@ -134,6 +138,7 @@ while True:
             2.5, (255, 0, 255),
             thickness=2)
     cv.imshow("Frame", rescaleFrame(frm))
+
 print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 # flags initialisation
 S1 = Point[831]
