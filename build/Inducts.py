@@ -15,7 +15,10 @@ key_list = list(SD.keys())
 val_list = list(SD.values())
 
 # Method to get the strings for user
-def get(i):
+def get_name(i):
     if i in SD.keys():
         return SD[i]
     return "Bots"
+# Method to get ArUco Id from String
+def get_id(i):
+    return key_list[val_list.index(i)]

@@ -47,7 +47,7 @@ while True:
         for a in markerIds:
             cc = np.where(markerIds == a[0])
             c = int(cc[0][0])
-            s = str(Inducts.get(a[0]))
+            s = str(Inducts.get_name(a[0]))
             Point[a[0]] = utils.find_coordinates(markerCorners, c)
             (x,y) = Point[a[0]][1]
             cv.putText(frm,
@@ -113,7 +113,7 @@ while True:
         for a in markerIds:
             cc = np.where(markerIds == a[0])
             c = int(cc[0][0])
-            s = str(Inducts.get(a[0]))
+            s = str(Inducts.get_name(a[0]))
             Point[a[0]] = utils.find_coordinates(markerCorners, c)
             (x, y) = Point[a[0]][1]
             cv.putText(frm,
@@ -125,12 +125,13 @@ while True:
             cv.circle(frm, center, 4, (0, 0, 255), -1)
 
         for k in Bots.key_list:
-            center = Point[k][0]
-            for l in range(0, 4):
-                id = Inducts.key_list[l]
-                coordinates = Point[id]
-                if center[0] in range(coordinates[1][0], coordinates[2][0]):
-                    Location[Bots.get_id(k)] = id
+            if k in Point.keys():
+                center = Point[k][0]
+                for l in range(0, 4):
+                    id = Inducts.key_list[l]
+                    coordinates = Point[id]
+                    if center[0] in range(coordinates[1][0], coordinates[2][0]):
+                        Location[id] = Bots.get_id(k)
 
     cv.putText(frm, "Press 'p' to start execution!",
             (10, 50),
@@ -141,8 +142,10 @@ while True:
 
 print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 # flags initialisation
-S1 = Point[831]
-S2 = Point[832]
+S1 = Point[Inducts.get_id("S1")]
+S2 = Point[Inducts.get_id("S2")]
+S3 = Point[Inducts.get_id("S3")]
+S4 = Point[Inducts.get_id("S4")]
 
 dist=[]
 start=[True]*4
@@ -157,7 +160,7 @@ straight=[True]*4
 
 print("Code Starts")
 # while loop
-sys.exit() # TODO - remove this line
+sys.exit()
 n = 0
 while True:
     ret, frame= cap.read()
@@ -169,7 +172,9 @@ while True:
     #algo
 
     #i want cofbot, xy and endpnt
-    cofbot=xy=endpnt=(0,0)
+    cofbot=(0,0)
+    xy=(0,0)
+    endpnt=(0,0)
 
     if not Return:
         dist1=utils.dist(cofbot,xy)
