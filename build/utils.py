@@ -1,7 +1,5 @@
 from math import *
 
-#from computer import comp
-from mqtt_router import control
 
 def dist(a,b):
     #two tuples/ coordinates
@@ -14,12 +12,11 @@ def xyd(a,b):
     y=abs(y2-y1)
     return (x,y)
 
-def std(a,b):
-    x1,y1=a[0],a[1]
-    x2,y2=b[0],b[1]
-    x=x1
-    y=y2
-    return (x,y)
+def std_v(a,b):
+    return (a[0], b[1])
+
+def std_h(a, b):
+    return (b[0], a[1])
 
 
 def pid(cofbot,dest):
@@ -34,7 +31,7 @@ def pid(cofbot,dest):
 
 
 def anglechecker(centre,pt1,edge):
-    x,y=centre[0],centre[1]
+    (x,y) = centre
     x1,y1=pt1[0],pt1[1]
     x2,y2=edge[0],edge[1]
     if (x==x1):

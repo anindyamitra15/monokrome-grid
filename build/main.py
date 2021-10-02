@@ -19,6 +19,9 @@ cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_1000)
 parameters = cv.aruco.DetectorParameters_create()
 
+#Globals
+Induct_Dist_Thres = 20
+
 def rescaleFrame(frame, scale=1):
     width = int(frame.shape[1] * scale)
     height = int(frame.shape[0] * scale)
@@ -42,8 +45,7 @@ while True:
         sys.exit()
 
     # Detect the markers in the image
-    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
-        frm, dictionary, parameters=parameters)
+    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(frm, dictionary, parameters=parameters)
     if (markerIds is not None):
         for a in markerIds:
             cc = np.where(markerIds == a[0])
@@ -149,51 +151,96 @@ print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 # sys.exit()
 # flags initialisation
 n:int = 0
+err_flag = False
+isVertical = True
+isReturn = False
 while True:
     ret, frm = cap.read()
 
     Sx = Inducts.key_list[n] # ArUco for Source Induct
-    Dx = Inducts.key_list[n+4]
+    Dx = Inducts.key_list[n + 4]  # ArUco for destination Induct
     S_cnt = Point[Sx][0] # center point of source induct
-    D_cnt = Point[Dx][0]
-    id = Location[Sx] # get the bot Id placed on the particular source induct
-    num = Bots.get_num(id) # ArUco number of that bot
-    
-    # Detect the markers in the image
-    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(frm, dictionary, parameters=parameters)
-    for a in markerIds:
-        cc = np.where(markerIds == a[0])
-        c = int(cc[0][0])
-        if a[0] == num: # if this is the bot of interest
-            cofbot, left_top, _ = utils.find_coordinates(markerCorners, c)
-            
-            s = str(Bots.get_id(a[0]))
-
-            cv.putText(frm, s, left_top, cv.FONT_HERSHEY_PLAIN, 1, (255, 0, 255), thickness=2)
-            cv.circle(frm, cofbot, 2, (0, 0, 255), -1)
-
-            right_top = int(markerCorners[c][0][1][0]), int(markerCorners[c][0][1][1])
-            fofbot = utils.mid_pt(left_top, right_top)
-            cv.arrowedLine(frm, cofbot, fofbot, (50,255,128), 2)
-            mid = utils.std(S_cnt, D_cnt)
-            normal = utils.std(S_cnt, cofbot)
-            cv.line(frm, cofbot, normal, (255, 0, 0), 2)
-            dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
-            _, angle = utils.anglechecker(cofbot, fofbot, mid)
-            print(dist_dest, angle)
-
-            
-            # end of scope
-
-    if cv.waitKey(1) & 0xff == ord('q') or n >= 4:
+    D_cnt = Point[Dx][0]  # center point of destination induct
+    # exit sequence
+    if cv.waitKey(1) & 0xff == ord('q') or n >= 4 or Sx not in Location.keys():
         for ids in Bots.val_list:
             control(ids, 3, direction = 0, pwm = 0)
         break
+    id = Location[Sx] # get the bot Id placed on the particular source induct
+    num = Bots.get_num(id) # ArUco number of that bot
+
+    # Detect the markers in the image
+    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(frm, dictionary, parameters=parameters)
+    if (markerIds is not None):
+        for a in markerIds:
+            cc = np.where(markerIds == a[0])
+            c = int(cc[0][0])
+            if a[0] == num: # if the detected id is the bot of interest
+                cofbot, left_top, _ = utils.find_coordinates(markerCorners, c)
+                s = str(Bots.get_id(a[0]))
+                cv.putText(frm, s, left_top, cv.FONT_HERSHEY_PLAIN, 1, (255, 0, 255), thickness=2)
+                cv.circle(frm, cofbot, 2, (0, 0, 255), -1)
+                right_top = int(markerCorners[c][0][1][0]), int(markerCorners[c][0][1][1])
+                fofbot = utils.mid_pt(left_top, right_top)
+                cv.arrowedLine(frm, cofbot, fofbot, (50,255,128), 2)
+                mid = utils.std_v(S_cnt, D_cnt)
+                if isVertical and not isReturn:
+                    normal = utils.std_v(S_cnt, cofbot)
+                    cv.line(frm, cofbot, normal, (255, 0, 0), 2)
+                    dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
+                    _, angle = utils.anglechecker(cofbot, fofbot, mid)
+                    if dist_dest < Induct_Dist_Thres:
+                        isVertical = False
+                        if 0 <= n <= 1:
+                            print("Bot turns right")
+                        else:
+                            print("Bot turns left")
+                        print("Bot moves forward")
+                # end of vertical f6rward locomotion scope
+                elif not isVertical and not isReturn:
+                    normal = utils.std_h(D_cnt, cofbot)
+                    cv.line(frm, cofbot, normal, (255, 0, 0), 2)
+                    dist_dest = utils.dist(cofbot, D_cnt)  # dist. from bot to turn point
+                    _, angle = utils.anglechecker(cofbot, fofbot, D_cnt)
+                    if dist_dest < Induct_Dist_Thres:
+                        isReturn = True
+                        print("Bot unloads")
+                        print("Bot comes back gear")
+                # end of horizontal forward locomotion scope
+                elif not isVertical and isReturn:
+                    normal = utils.std_h(D_cnt, cofbot)
+                    cv.line(frm, cofbot, normal, (255, 0, 0), 2)
+                    dist_dest = utils.dist(cofbot, mid)
+                    _, angle = utils.anglechecker(cofbot, fofbot, mid)
+                    if dist_dest < Induct_Dist_Thres:
+                        isVertical = True
+                        if 0 <= n <= 1:
+                            print("Bot turns right")
+                        else:
+                            print("Bot turns left")
+                        print("Bor moves forward")
+                # end of horizontal return locomotion scope
+                elif isVertical and isReturn:
+                    normal = utils.std_v(S_cnt, cofbot)
+                    cv.line(frm, cofbot, normal, (255, 0, 0), 2)
+                    dist_dest = utils.dist(cofbot, S_cnt)
+                    _, angle = utils.anglechecker(cofbot, fofbot, S_cnt)
+                    if dist_dest < Induct_Dist_Thres:
+                        isReturn = False
+                        print("Bot stops")
+                        print(n)
+                        n += 1
+                        print("goes to ")
+                        print(n)
+                # end of vertical return locomotion scope
+
+
+
+
+
     cv.aruco.drawDetectedMarkers(frm, markerCorners)
     cv.imshow("Frame", rescaleFrame(frm))
 
-    if False:
-        n += 1
 
 cap.release()
 cv.destroyAllWindows()
