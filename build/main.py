@@ -179,6 +179,7 @@ xys = [xy1,xy2,xy3,xy4]
 # print(xys)
 # sys.exit()
 id = Location[Inducts.key_list[n]]  # holds the current chip id
+
 while True:
     ret, frame= cap.read()
     # id = Location[Inducts.key_list[n]]

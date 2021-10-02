@@ -4,10 +4,10 @@ With Getter functions
 '''
 # LUT Dictionary
 A = {
-    60  :   7892874,
+    60  :   7889076,
     120 :   7870122,
     180 :   7893554,
-    240 :   7889076
+    240 :   7892874
 }
 
 # Computations
