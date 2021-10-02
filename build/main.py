@@ -1,3 +1,4 @@
+from collections import namedtuple
 import cv2 as cv
 import sys
 import numpy as np
@@ -29,6 +30,7 @@ def rescaleFrame(frame, scale=1):
 Point = dict()
 # Arena confirmation Loop
 # Loop 1
+xys = set()
 while True:
     ret, frm = cap.read()
 
@@ -65,6 +67,7 @@ while True:
                 S = Point[Inducts.key_list[i]][0] # S point
                 D = Point[Inducts.key_list[i+4]][0] # D point
                 M = (S[0], D[1]) # Mid point
+                xys.add(M)
                 cv.circle(frm, M, 4, (0, 0, 255), -1)
                 cv.line(frm, S, M, (164, 73, 163), 2)
                 cv.line(frm, D, M, (164, 73, 163), 2)
@@ -142,10 +145,16 @@ while True:
 
 print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 # flags initialisation
-S1 = Point[Inducts.get_id("S1")]
-S2 = Point[Inducts.get_id("S2")]
-S3 = Point[Inducts.get_id("S3")]
-S4 = Point[Inducts.get_id("S4")]
+S1 = Point[Inducts.get_id("S1")][0]
+S2 = Point[Inducts.get_id("S2")][0]
+S3 = Point[Inducts.get_id("S3")][0]
+S4 = Point[Inducts.get_id("S4")][0]
+S = [S1, S2, S3, S4]
+D1 = Point[Inducts.get_id("D1")][0]
+D2 = Point[Inducts.get_id("D2")][0]
+D3 = Point[Inducts.get_id("D3")][0]
+D4 = Point[Inducts.get_id("D4")][0]
+D = [D1,D2,D3,D4]
 
 dist=[]
 start=[True]*4
@@ -160,29 +169,54 @@ straight=[True]*4
 
 print("Code Starts")
 # while loop
-sys.exit()
+# sys.exit()
 n = 0
+xy1 =utils.std(D1, S1)
+xy2 = utils.std(D2, S2)
+xy3 = utils.std(D3, S3)
+xy4 = utils.std(D4, S4)
+# xys = [xy1,xy2,xy3,xy4]
+
+# print(xys)
+# sys.exit()
+id = Location[Inducts.key_list[n]]  # holds the current chip id
 while True:
     ret, frame= cap.read()
+    # id = Location[Inducts.key_list[n]]
 
     if cv.waitKey(1) & 0xff == ord('q'):
         break
 
 
     #algo
-
+    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
+        frame, dictionary, parameters=parameters)
+    if (markerIds is not None):
+        for a in markerIds:
+            cc = np.where(markerIds == a[0])
+            c = int(cc[0][0])
+            s = str(Inducts.get_name(a[0]))
+            variab = utils.find_coordinates(markerCorners, c)
+            (x, y) = variab[0]
+            cv.putText(frame,
+                       s, (x, y),
+                       cv.FONT_HERSHEY_PLAIN,
+                       1, (255, 0, 255),
+                       thickness=1)
+            if Bots.get_num(id):
+                cofbot = (x,y)
+            cv.circle(frame, center, 4, (0, 0, 255), -1)
     #i want cofbot, xy and endpnt
-    cofbot=(0,0)
-    xy=(0,0)
-    endpnt=(0,0)
-
-    if not Return:
+    xy=xys[n]
+    endpnt=D[n]
+    print(cofbot)
+    if not Return[n]:
         dist1=utils.dist(cofbot,xy)
         dist2=utils.dist(xy,endpnt)
     else:
         dist1=utils.dist(cofbot,xy)
         dist2=utils.dist(xy,endpnt)
-    if start :
+    if start[n] :
 
         mid[n]=utils.checker(dist,dist1)
 
@@ -215,10 +249,10 @@ while True:
 
 
 
-    if mid:
+    if mid[n]:
         print("now take aaaaaaknvlnrc;eml;emv;l")
 
-        start=False
+        start[n]=False
         #print(mid)
         #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
         # cv.line(roi,cofbot,fofbot,(0,0,0),7)
@@ -228,14 +262,14 @@ while True:
         #print(theta)
         print("Now chwck id and rotate accordingly!............")
         #control(id, 3, direction=0,pwm=0)
-        if not Return:
+        if not Return[n]:
             i=10
             while i:
                 i-=1
                 control(id, 1, direction=1,pwm=500)
                 control(id, 2, direction=2,pwm=500)
-            mid=False
-        turnj=True
+            mid[n]=False
+        turnj[n]=True
 
         '''
         if not straight:
@@ -254,14 +288,14 @@ while True:
             control(id,3,direction=0,pwm=0)
             turnj=True
         '''
-    if turnj:
-        if not Return:
+    if turnj[n]:
+        if not Return[n]:
             # mid=False
             print(dist,dist2)
-            drop=utils.checker(dist,dist2)
+            drop[n]=utils.checker(dist,dist2)
             print(dist,dist2,"d2")
             print(drop) #TODO: Throw package command
-            if(drop):
+            if(drop[n]):
                 print("stop")
                 #control(id, 3, direction=0, pwm=0)
                 control(id, 1, direction=0, pwm=0)
@@ -273,14 +307,14 @@ while True:
                 #control(id, 3, direction=1, pwm=pwm)
                 control(id, 1, direction=1, pwm=300)
                 control(id, 2, direction=1, pwm=300)
-        if Return:
-            End=True
+        if Return[n]:
+            End[n]=True
 
-            drop=utils.checker(dist,dist2)
-            if(drop):
+            drop[n]=utils.checker(dist,dist2)
+            if(drop[n]):
                 #drop=False
-                Return = False
-                dropr=True
+                Return[n] = False
+                dropr[n]=True
                 print("stop")
                 #control(id, 3, direction=0, pwm=0)
                 control(id, 1, direction=0, pwm=0)
@@ -293,25 +327,25 @@ while True:
                 control(id, 1, direction=1, pwm=250)
                 control(id, 2, direction=1, pwm=250)
             # drop = False
-        if drop:
+        if drop[n]:
             print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
 
 
 
-    if drop :
+    if drop[n] :
 
-        turnj=False
+        turnj[n]=False
         control(id, 2, direction=0,pwm=0)
         control(id, 1, direction=0,pwm=0)
-        if not dropr:
+        if not dropr[n]:
             control(id,0,logic=1)
 
 
 
-        if drop:
+        if drop[n]:
 
-            Return=True
-        drop=False
+            Return[n]=True
+        drop[n]=False
 
 
 
@@ -342,11 +376,11 @@ while True:
             print("turning left 90deg")
         '''
 
-    if Return and not End:
-        dropr=True
-        midr=utils.checker(dist,dist1)
+    if Return[n] and not End[n]:
+        dropr[n]=True
+        midr[n]=utils.checker(dist,dist1)
 
-        if midr and not turnj:
+        if midr[n] and not turnj[n]:
             print("stop")
             control(id, 1, direction=0, pwm=0)
             control(id, 2, direction=0, pwm=0)
@@ -365,12 +399,12 @@ while True:
                 i-=1
                 control(id, 1, direction=1,pwm=550)
                 control(id, 2, direction=2,pwm=550)
-            midr=False
+            midr[namedtuple]=False
             #control(id, 3, direction=0,pwm=0)
             #time.sleep(1.095)
             # control(id, 1, direction=0,pwm=0)
             # control(id, 2, direction=0,pwm=0)
-            turnj=True #TODO: DELETE
+            turnj[n]=True #TODO: DELETE
 
 
 
@@ -387,11 +421,13 @@ while True:
         # drop=False
         print("returning")
     '''
-    if End and utils.checker(dist,dist2):
+    if End[n] and utils.checker(dist,dist2):
         print("DONNNEEEEEE-------------------------------------------------------------------.........")
         control(id, 3, direction=0,pwm=0)
         # control(id, 1, direction=0,pwm=0)
         # control(id, 2, direction=0,pwm=0)
+        id = Location[Inducts.key_list[n]]
         n+=1
+    cv.imshow("Frame",frame)
 cap.release()
 cv.destroyAllWindows()
