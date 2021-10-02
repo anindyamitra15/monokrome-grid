@@ -50,8 +50,8 @@ def anglechecker(centre,pt1,edge):
         theta=round(degrees(rad))
 
     #print(theta)
-    if theta<0:
-        theta=-(theta)
+    # if theta<0:
+    #     theta=-(theta)
     if theta<=5:
         return True, theta
     return False, theta

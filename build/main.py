@@ -21,6 +21,7 @@ parameters = cv.aruco.DetectorParameters_create()
 
 #Globals
 Induct_Dist_Thres = 20
+Speed_pwm = 250
 
 def rescaleFrame(frame, scale=1):
     width = int(frame.shape[1] * scale)
@@ -154,6 +155,9 @@ n:int = 0
 err_flag = False
 isVertical = True
 isReturn = False
+pwm_r = Speed_pwm
+pwm_l = Speed_pwm
+pwm_b = Speed_pwm
 while True:
     ret, frm = cap.read()
 
@@ -186,15 +190,29 @@ while True:
                 mid = utils.std_v(S_cnt, D_cnt)
                 if isVertical and not isReturn:
                     normal = utils.std_v(S_cnt, cofbot)
+                    dist_normal = utils.dist(cofbot, normal)
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
                     dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
                     _, angle = utils.anglechecker(cofbot, fofbot, mid)
+                    #Bot should move forward
+                    control(id , 3 , direction =1, pwm=pwm_l)
+                    x2 = cofbot[0] 
+                    x1 = S_cnt[0]
+                    k=0.5
+                    if x2 - x1> Induct_Dist_Thres:
+                        control(id,2, pwm=pwm_r+k*dist_normal)
+                    elif x2 - x1 < Induct_Dist_Thres:
+                        control(id,1, pwm=pwm_l+k*dist_normal)
                     if dist_dest < Induct_Dist_Thres:
                         isVertical = False
                         if 0 <= n <= 1:
                             print("Bot turns right")
+                            control(id,2, direction=1,pwm=pwm_r)
+                            control(id,1, direction=2,pwm=pwm_l)
                         else:
                             print("Bot turns left")
+                            control(id,1, direction=1,pwm=pwm_r)
+                            control(id,2, direction=2,pwm=pwm_l)
                         print("Bot moves forward")
                 # end of vertical f6rward locomotion scope
                 elif not isVertical and not isReturn:
@@ -230,6 +248,9 @@ while True:
                         print("Bot stops")
                         print(n)
                         n += 1
+                        pwm_r = Speed_pwm
+                        pwm_l = Speed_pwm
+                        pwm_b = Speed_pwm
                         print("goes to ")
                         print(n)
                 # end of vertical return locomotion scope
