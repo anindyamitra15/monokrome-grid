@@ -21,7 +21,10 @@ parameters = cv.aruco.DetectorParameters_create()
 
 #Globals
 Induct_Dist_Thres = 20
-Speed_pwm = 250
+Bot_Angle_Thres = 20
+Speed_pwm = 200
+Pro_con = 0.5
+
 
 def rescaleFrame(frame, scale=1):
     width = int(frame.shape[1] * scale)
@@ -195,16 +198,21 @@ while True:
                     dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
                     _, angle = utils.anglechecker(cofbot, fofbot, mid)
                     #Bot should move forward
-                    control(id , 3 , direction =1, pwm=pwm_l)
-                    x2 = cofbot[0] 
+                    control(id , 3 , direction =1)
+                    x2 = cofbot[0]
                     x1 = S_cnt[0]
-                    k=0.5
-                    if x2 - x1> Induct_Dist_Thres:
-                        control(id,2, pwm=pwm_r+k*dist_normal)
-                    elif x2 - x1 < Induct_Dist_Thres:
-                        control(id,1, pwm=pwm_l+k*dist_normal)
+
+                    if x2 - x1> 0:
+                        print("Left higher")
+                        control(id,1, pwm=pwm_l+Pro_con*dist_normal)
+
+                    elif x2 - x1 < 0:
+                        print("Right higher")
+                        control(id, 2, pwm=pwm_r + Pro_con * dist_normal)
+
                     if dist_dest < Induct_Dist_Thres:
                         isVertical = False
+
                         if 0 <= n <= 1:
                             print("Bot turns right")
                             control(id,2, direction=1,pwm=pwm_r)
@@ -213,13 +221,18 @@ while True:
                             print("Bot turns left")
                             control(id,1, direction=1,pwm=pwm_r)
                             control(id,2, direction=2,pwm=pwm_l)
-                        print("Bot moves forward")
+
                 # end of vertical f6rward locomotion scope
                 elif not isVertical and not isReturn:
                     normal = utils.std_h(D_cnt, cofbot)
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
                     dist_dest = utils.dist(cofbot, D_cnt)  # dist. from bot to turn point
                     _, angle = utils.anglechecker(cofbot, fofbot, D_cnt)
+                    
+                    if (angle < Bot_Angle_Thres and dist_normal < Induct_Dist_Thres):
+                        print("Bot moves forward")
+                        control(id, 3, direction=0)
+                        
                     if dist_dest < Induct_Dist_Thres:
                         isReturn = True
                         print("Bot unloads")

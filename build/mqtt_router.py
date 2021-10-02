@@ -88,7 +88,7 @@ def control(chip_id: int, motor: int, **kwargs):
         if motor == enums.motors.UNLOADER:
             for key, value in kwargs.items():
                 if (key == 'logic') and value:
-                    print("Unloading")
+                    print("Unloads")
                     client.publish(topic, payload=1 if value else 0)
         else:  # if motors are selected
             for key, value in kwargs.items():
@@ -96,14 +96,14 @@ def control(chip_id: int, motor: int, **kwargs):
                         (value in range(enums.directions.Stop, enums.directions.Reverse + 1)):
                     direction = int(value)
                     client.publish(topic + '/' + str(cred.topicPub.DIRECTION), payload=direction)
-                    print("Published direction: " + str(direction) + " to " + str(motor))
+                    print("Dir: " + str(direction) + " to " + str(motor))
                 if (key == 'pwm') and \
                         (value in range(0, 1024)):
                     pwm = int(value)
                     client.publish(topic + '/' + str(cred.topicPub.PWM), payload=pwm)
-                    print("Setting pwm: " + str(pwm) + " to " + str(motor))
+                    print("PWM: " + str(pwm) + " to " + str(motor))
     else:
-        print("Bot not present in set")
+        print("Bot absent")
 
 
 def on_exit():
