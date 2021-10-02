@@ -28,10 +28,10 @@ def frontofbot():
 def pid(cofbot,dest):
     cob=cofbot[0]-dest[0]
     print(cob)
-    if cob > 400:
-        return 1
-    elif cob< -400:
+    if cob > 10:
         return 2
+    elif cob< -10:
+        return 1
     else:
         return 3
 
@@ -67,7 +67,7 @@ def checker(dist,dist1):
     #print(dist,dist1)
     val=False
     if dist:
-        if(dist1<=35):
+        if(dist1<=50):
             #print(dist1)
             dist1=0
             dist.pop()

@@ -237,11 +237,11 @@ while True:
             val=utils.pid(cofbot,xy)
             if val==1:
                 control(id, 1, direction=1, pwm=279)
-                control(id, 2, direction=1, pwm=250)
+                control(id, 2, direction=1, pwm=100)
                 print('lefffttttttt ppppiiiddddddddddddddd')
             elif val==2:
                 control(id, 2, direction=1, pwm=279)
-                control(id, 1, direction=1, pwm=250)
+                control(id, 1, direction=1, pwm=100)
                 print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
             else:
                 control(id, 1, direction=1, pwm=279)
@@ -268,13 +268,13 @@ while True:
         #print(theta)
         print("Now chwck id and rotate accordingly!............")
         #control(id, 3, direction=0,pwm=0)
-        if not Return[n]:
-            i=10
-            while i:
-                i-=1
-                control(id, 1, direction=1,pwm=500)
-                control(id, 2, direction=2,pwm=500)
-            mid[n]=False
+        # if not Return[n]:
+        i=10
+        while i:
+            i-=1
+            control(id, 1, direction=1,pwm=500)
+            control(id, 2, direction=2,pwm=500)
+        mid[n]=False
         turnj[n]=True
 
         '''
