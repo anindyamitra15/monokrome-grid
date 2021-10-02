@@ -1,4 +1,3 @@
-from collections import namedtuple
 import cv2 as cv
 import sys
 import numpy as np
@@ -401,7 +400,7 @@ while True:
                 i-=1
                 control(id, 1, direction=1,pwm=550)
                 control(id, 2, direction=2,pwm=550)
-            midr[namedtuple]=False
+            midr[n]=False
             #control(id, 3, direction=0,pwm=0)
             #time.sleep(1.095)
             # control(id, 1, direction=0,pwm=0)
