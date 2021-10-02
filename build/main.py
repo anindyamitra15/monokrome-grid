@@ -198,8 +198,9 @@ while True:
                     dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
                     _, angle = utils.anglechecker(cofbot, fofbot, mid)
                     #Bot should move forward
-                    control(id , 3 , direction =1)
-                    x2 = cofbot[0]
+                    control(id , 3 , direction =1) 
+
+                    x2 = cofbot[0]   
                     x1 = S_cnt[0]
 
                     if x2 - x1> 0:
@@ -211,8 +212,9 @@ while True:
                         control(id, 2, pwm=pwm_r + Pro_con * dist_normal)
 
                     if dist_dest < Induct_Dist_Thres:
-                        isVertical = False
+                        isVertical = False   #eikhane ekta control(id, 3, direction=0)
 
+                        #isVertical ke if else er moddhe dhukiye False kor
                         if 0 <= n <= 1:
                             print("Bot turns right")
                             control(id,2, direction=1,pwm=pwm_r)
