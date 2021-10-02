@@ -27,10 +27,13 @@ def frontofbot():
     pass
 def pid(cofbot,dest):
     cob=cofbot[0]-dest[0]
-    if cob>5:
+    print(cob)
+    if cob > 400:
         return 1
-    elif cob<-10:
+    elif cob< -400:
         return 2
+    else:
+        return 3
 
 
 def anglechecker(centre,pt1,edge):

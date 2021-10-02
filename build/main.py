@@ -179,12 +179,13 @@ xys = [xy1,xy2,xy3,xy4]
 # print(xys)
 # sys.exit()
 id = Location[Inducts.key_list[n]]  # holds the current chip id
-
 while True:
     ret, frame= cap.read()
     # id = Location[Inducts.key_list[n]]
 
     if cv.waitKey(1) & 0xff == ord('q'):
+        for ids in Bots.val_list:
+            control(ids, 3, direction = 0, pwm = 0)
         break
 
 
@@ -197,14 +198,14 @@ while True:
             c = int(cc[0][0])
             s = str(Inducts.get_name(a[0]))
             center= utils.find_coordinates(markerCorners, c)[0]
-            
+
             cv.putText(frame,
                        s, center,
                        cv.FONT_HERSHEY_PLAIN,
                        1, (255, 0, 255),
                        thickness=1)
-            if Bots.get_num(id):
-                cofbot = (x,y)
+            if Bots.get_num(id) in Bots.key_list:
+                cofbot = center
             cv.circle(frame, center, 4, (0, 0, 255), -1)
     #i want cofbot, xy and endpnt
     xy=xys[n]
@@ -232,17 +233,20 @@ while True:
         else:
             print("forward")
             #control(id, 3, direction=1, pwm=200)
+            print("CCCCOOOOOFFFFBOOOOTTT and XXXYYYY", cofbot[0], xy[0])
             val=utils.pid(cofbot,xy)
             if val==1:
                 control(id, 1, direction=1, pwm=279)
-                control(id, 2, direction=1, pwm=100)
-                #print('lefffttttttt ppppiiiddddddddddddddd')
+                control(id, 2, direction=1, pwm=250)
+                print('lefffttttttt ppppiiiddddddddddddddd')
             elif val==2:
                 control(id, 2, direction=1, pwm=279)
-                control(id, 1, direction=1, pwm=100)
-                #print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
-            control(id, 1, direction=1, pwm=279)
-            control(id, 2, direction=1, pwm=290)
+                control(id, 1, direction=1, pwm=250)
+                print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
+            else:
+                control(id, 1, direction=1, pwm=279)
+                control(id, 2, direction=1, pwm=290)
+                print("normelllllll")
 
 
 
@@ -293,9 +297,9 @@ while True:
     if turnj[n]:
         if not Return[n]:
             # mid=False
-            print(dist,dist2)
+            #print(dist,dist2)
             drop[n]=utils.checker(dist,dist2)
-            print(dist,dist2,"d2")
+            #print(dist,dist2,"d2")
             print(drop) #TODO: Throw package command
             if(drop[n]):
                 print("stop")
@@ -428,8 +432,8 @@ while True:
         control(id, 3, direction=0,pwm=0)
         # control(id, 1, direction=0,pwm=0)
         # control(id, 2, direction=0,pwm=0)
-        id = Location[Inducts.key_list[n]]
         n+=1
+        id = Location[Inducts.key_list[n]]
     cv.imshow("Frame",frame)
 cap.release()
 cv.destroyAllWindows()
