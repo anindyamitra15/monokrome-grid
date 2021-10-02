@@ -140,300 +140,60 @@ while True:
             cv.FONT_HERSHEY_PLAIN,
             2.5, (255, 0, 255),
             thickness=2)
+    cv.aruco.drawDetectedMarkers(frm, markerCorners)
     cv.imshow("Frame", rescaleFrame(frm))
-
+print("Locations")
 print(Location) # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+
+# on_exit()
+# sys.exit()
 # flags initialisation
-S1 = Point[Inducts.get_id("S1")][0]
-S2 = Point[Inducts.get_id("S2")][0]
-S3 = Point[Inducts.get_id("S3")][0]
-S4 = Point[Inducts.get_id("S4")][0]
-S = ["S1", "S2", "S3", "S4"]
-D1 = Point[Inducts.get_id("D1")][0]
-D2 = Point[Inducts.get_id("D2")][0]
-D3 = Point[Inducts.get_id("D3")][0]
-D4 = Point[Inducts.get_id("D4")][0]
-D = [D1,D2,D3,D4]
-
-dist=[]
-start=[True]*4
-turnj=[False]*4
-mid=[False]*4
-midr=[False]*4
-drop=[False]*4
-dropr=[False]*4
-Return=[False]*4
-End=[False]*4
-straight=[True]*4
-
-print("Code Starts")
-# while loop
-# sys.exit()
-n = 0
-xy1 =utils.std(S1, D1)
-xy2 = utils.std(S2, D2)
-xy3 = utils.std(S3, D3)
-xy4 = utils.std(S4, D4)
-xys = [xy1,xy2,xy3,xy4]
-
-# print(xys)
-# sys.exit()
-id = Location[Inducts.key_list[n]]  # holds the current chip id
+n:int = 0
 while True:
-    ret, frame= cap.read()
-    # id = Location[Inducts.key_list[n]]
+    ret, frm = cap.read()
 
-    if cv.waitKey(1) & 0xff == ord('q'):
+    Sx = Inducts.key_list[n] # ArUco for Source Induct
+    Dx = Inducts.key_list[n+4]
+    S_cnt = Point[Sx][0] # center point of source induct
+    D_cnt = Point[Dx][0]
+    id = Location[Sx] # get the bot Id placed on the particular source induct
+    num = Bots.get_num(id) # ArUco number of that bot
+    
+    # Detect the markers in the image
+    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(frm, dictionary, parameters=parameters)
+    for a in markerIds:
+        cc = np.where(markerIds == a[0])
+        c = int(cc[0][0])
+        if a[0] == num: # if this is the bot of interest
+            cofbot, left_top, _ = utils.find_coordinates(markerCorners, c)
+            
+            s = str(Bots.get_id(a[0]))
+
+            cv.putText(frm, s, left_top, cv.FONT_HERSHEY_PLAIN, 1, (255, 0, 255), thickness=2)
+            cv.circle(frm, cofbot, 2, (0, 0, 255), -1)
+
+            right_top = int(markerCorners[c][0][1][0]), int(markerCorners[c][0][1][1])
+            fofbot = utils.mid_pt(left_top, right_top)
+            cv.arrowedLine(frm, cofbot, fofbot, (50,255,128), 2)
+            mid = utils.std(S_cnt, D_cnt)
+            normal = utils.std(S_cnt, cofbot)
+            cv.line(frm, cofbot, normal, (255, 0, 0), 2)
+            dist_dest = utils.dist(cofbot, mid) # dist. from bot to turn point
+            _, angle = utils.anglechecker(cofbot, fofbot, mid)
+            print(dist_dest, angle)
+
+            
+            # end of scope
+
+    if cv.waitKey(1) & 0xff == ord('q') or n >= 4:
         for ids in Bots.val_list:
             control(ids, 3, direction = 0, pwm = 0)
         break
+    cv.aruco.drawDetectedMarkers(frm, markerCorners)
+    cv.imshow("Frame", rescaleFrame(frm))
 
+    if False:
+        n += 1
 
-    #algo
-    markerCorners, markerIds, rejectedCandidates = cv.aruco.detectMarkers(
-        frame, dictionary, parameters=parameters)
-    if (markerIds is not None):
-        for a in markerIds:
-            cc = np.where(markerIds == a[0])
-            c = int(cc[0][0])
-            s = str(Inducts.get_name(a[0]))
-            center= utils.find_coordinates(markerCorners, c)[0]
-
-            cv.putText(frame,
-                       s, center,
-                       cv.FONT_HERSHEY_PLAIN,
-                       1, (255, 0, 255),
-                       thickness=1)
-            if Bots.get_num(id) in Bots.key_list:
-                cofbot = center
-            cv.circle(frame, center, 4, (0, 0, 255), -1)
-    #i want cofbot, xy and endpnt
-    xy=xys[n]
-    endpnt=D[n]
-    cv.circle(frame, xy, 4, (112, 0, 255), -1)
-    cv.circle(frame, endpnt, 4, (34, 112, 255), -1)
-    print(cofbot)
-    if not Return[n]:
-        dist1=utils.dist(cofbot,xy)
-        dist2=utils.dist(xy,endpnt)
-    else:
-        dist1=utils.dist(cofbot,xy)
-        dist2=utils.dist(xy,endpnt)
-    if start[n] :
-
-        mid[n]=utils.checker(dist,dist1)
-
-        if(mid[n]):
-            print("stop")
-            control(id, 3, direction=0, pwm=0)
-            # control(id, 1, direction=0, pwm=0)
-            # control(id, 2, direction=0, pwm=0)
-
-
-        else:
-            print("forward")
-            #control(id, 3, direction=1, pwm=200)
-            print("CCCCOOOOOFFFFBOOOOTTT and XXXYYYY", cofbot[0], xy[0])
-            val=utils.pid(cofbot,xy)
-            if val==1:
-                control(id, 1, direction=1, pwm=279)
-                control(id, 2, direction=1, pwm=100)
-                print('lefffttttttt ppppiiiddddddddddddddd')
-            elif val==2:
-                control(id, 2, direction=1, pwm=279)
-                control(id, 1, direction=1, pwm=100)
-                print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
-            else:
-                control(id, 1, direction=1, pwm=279)
-                control(id, 2, direction=1, pwm=290)
-                print("normelllllll")
-
-
-
-        print('kgklhlvijgl', start[n],mid[n])
-
-
-
-
-    if mid[n]:
-        print("now take aaaaaaknvlnrc;eml;emv;l")
-
-        start[n]=False
-        #print(mid)
-        #straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-        # cv.line(roi,cofbot,fofbot,(0,0,0),7)
-        # cv.line(roi,cofbot,endpnt,(0,0,0),7)
-        # cv.putText(roi, str(theta), (cofbot), cv.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
-        print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        #print(theta)
-        print("Now chwck id and rotate accordingly!............")
-        #control(id, 3, direction=0,pwm=0)
-        # if not Return[n]:
-        i=10
-        while i:
-            i-=1
-            control(id, 1, direction=1,pwm=500)
-            control(id, 2, direction=2,pwm=500)
-        mid[n]=False
-        turnj[n]=True
-
-        '''
-        if not straight:
-            if (id==7892874):
-                control(id, 2, direction=1,pwm=300)
-                control(id,3,direction=0,pwm=0)
-                print("turning left 90deg",id )
-                #qtime.sleep(2)
-                straight = True
-
-            else:
-                control(id,1,direction=1)
-                control(id,3,direction=0)
-                print("turningright 90deg",id )
-        else:
-            control(id,3,direction=0,pwm=0)
-            turnj=True
-        '''
-    if turnj[n]:
-        if not Return[n]:
-            # mid=False
-            #print(dist,dist2)
-            drop[n]=utils.checker(dist,dist2)
-            #print(dist,dist2,"d2")
-            print(drop) #TODO: Throw package command
-            if(drop[n]):
-                print("stop")
-                #control(id, 3, direction=0, pwm=0)
-                control(id, 1, direction=0, pwm=0)
-                control(id, 2, direction=0, pwm=0)
-
-
-            else:
-                print("forward")
-                #control(id, 3, direction=1, pwm=pwm)
-                control(id, 1, direction=1, pwm=300)
-                control(id, 2, direction=1, pwm=300)
-        if Return[n]:
-            End[n]=True
-
-            drop[n]=utils.checker(dist,dist2)
-            if(drop[n]):
-                #drop=False
-                Return[n] = False
-                dropr[n]=True
-                print("stop")
-                #control(id, 3, direction=0, pwm=0)
-                control(id, 1, direction=0, pwm=0)
-                control(id, 2, direction=0, pwm=0)
-
-
-            else:
-                print("forward")
-                #control(id, 3, direction=1, pwm=pwm)
-                control(id, 1, direction=1, pwm=250)
-                control(id, 2, direction=1, pwm=250)
-            # drop = False
-        if drop[n]:
-            print('gooooiinnnggg  tttoooo  dddrroopppp',turnj,drop)
-
-
-
-    if drop[n] :
-
-        turnj[n]=False
-        control(id, 2, direction=0,pwm=0)
-        control(id, 1, direction=0,pwm=0)
-        if not dropr[n]:
-            control(id,0,logic=1)
-
-
-
-        if drop[n]:
-
-            Return[n]=True
-        drop[n]=False
-
-
-
-
-
-        # print("returning!")
-        # print("rotating!----------------------------")
-        # if (id<2):
-        #     control(12345678, 1, direction=2, pwm='200')  #calibrate pwm
-        #     control(12345678, 2, direction='0', pwm='0')   #calibrate pwm if req
-        #     control(12345678, 3, direction='0', pwm='0')
-        #     print("turning right 90deg")
-
-        # else:
-        #     control(12345678, 2, direction='1', pwm='200')  #calibrate pwm
-        #     control(12345678, 1, direction='0', pwm='0')   #calibrate pwm if req
-        #     control(12345678, 3, direction='0', pwm='0')
-        #     print("turning left 90deg")
-        '''
-        if (id<2):
-            comp(2)
-            comp(0)
-            print("turning right 90deg")
-
-        else:
-            comp(3)
-            comp(0)
-            print("turning left 90deg")
-        '''
-
-    if Return[n] and not End[n]:
-        dropr[n]=True
-        midr[n]=utils.checker(dist,dist1)
-
-        if midr[n] and not turnj[n]:
-            print("stop")
-            control(id, 1, direction=0, pwm=0)
-            control(id, 2, direction=0, pwm=0)
-            print("now take aaaaaaknvlnrc;eml;emv;l")
-
-            #print(mid)
-            # straight,theta=utils.anglechecker(cofbot,fofbot,endpnt)
-            # cv.line(roi,cofbot,fofbot,(0,0,0),7)
-            # cv.line(roi,cofbot,endpnt,(0,0,0),7)
-            # cv.putText(roi, str(theta), (cofbot), cv.FONT_HERSHEY_PLAIN, 2, (255, 20, 100), 5)
-            print("huurrah!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            #print(theta)
-            print("Now chwck id and rotate accordingly!............")
-            i=12
-            while i:
-                i-=1
-                control(id, 1, direction=1,pwm=550)
-                control(id, 2, direction=2,pwm=550)
-            midr[n]=False
-            #control(id, 3, direction=0,pwm=0)
-            #time.sleep(1.095)
-            # control(id, 1, direction=0,pwm=0)
-            # control(id, 2, direction=0,pwm=0)
-            turnj[n]=True #TODO: DELETE
-
-
-
-        else:
-            print("reverse")
-            control(id, 3, direction=2, pwm=300)
-            # control(id, 1, direction=2, pwm=300)
-            # control(id, 2, direction=2, pwm=300)
-
-        '''
-        print('kgklhlvijgl',Return,mid)
-
-        # mid=False
-        # drop=False
-        print("returning")
-    '''
-    if End[n] and utils.checker(dist,dist2):
-        print("DONNNEEEEEE-------------------------------------------------------------------.........")
-        control(id, 3, direction=0,pwm=0)
-        # control(id, 1, direction=0,pwm=0)
-        # control(id, 2, direction=0,pwm=0)
-        n+=1
-        id = Location[Inducts.key_list[n]]
-    cv.imshow("Frame",frame)
 cap.release()
 cv.destroyAllWindows()

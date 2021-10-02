@@ -5,10 +5,7 @@ from mqtt_router import control
 
 def dist(a,b):
     #two tuples/ coordinates
-    x1,y1=a[0],a[1]
-    x2,y2=b[0],b[1]
-    val=(((x2-x1)**2)+((y2-y1)**2))
-    return sqrt(val)
+    return sqrt(((b[0]-a[0])**2)+((b[1]-a[1])**2))
 
 def xyd(a,b):
     x1,y1=a[0],a[1]
@@ -23,8 +20,8 @@ def std(a,b):
     x=x1
     y=y2
     return (x,y)
-def frontofbot():
-    pass
+
+
 def pid(cofbot,dest):
     cob=cofbot[0]-dest[0]
     print(cob)
@@ -37,15 +34,14 @@ def pid(cofbot,dest):
 
 
 def anglechecker(centre,pt1,edge):
-    val=False
     x,y=centre[0],centre[1]
     x1,y1=pt1[0],pt1[1]
     x2,y2=edge[0],edge[1]
-    if (x-x1==0):
+    if (x==x1):
         m1=1
     else:
         m1=(y-y1)/(x-x1)
-    if (x-x2==0):
+    if (x==x2):
         m2=1
     else:
         m2=(y-y2)/(x-x2)
@@ -61,7 +57,7 @@ def anglechecker(centre,pt1,edge):
         theta=-(theta)
     if theta<=5:
         return True, theta
-    return val, theta
+    return False, theta
 
 def checker(dist,dist1):
     #print(dist,dist1)
@@ -88,6 +84,9 @@ def checker(dist,dist1):
     #     #     dist.append(dist2)
     #     #     print(dist2)
     return val
+
+def mid_pt(a, b):
+    return (int((a[0] + b[0]) // 2), int((a[1] + b[1]) // 2))
 
 '''
 utilities for ArUco Marker Position calculations
