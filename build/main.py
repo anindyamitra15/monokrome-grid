@@ -30,7 +30,7 @@ def rescaleFrame(frame, scale=1):
 Point = dict()
 # Arena confirmation Loop
 # Loop 1
-xys = set()
+#xys = set()
 while True:
     ret, frm = cap.read()
 
@@ -67,7 +67,7 @@ while True:
                 S = Point[Inducts.key_list[i]][0] # S point
                 D = Point[Inducts.key_list[i+4]][0] # D point
                 M = (S[0], D[1]) # Mid point
-                xys.add(M)
+                #xys.add(M)
                 cv.circle(frm, M, 4, (0, 0, 255), -1)
                 cv.line(frm, S, M, (164, 73, 163), 2)
                 cv.line(frm, D, M, (164, 73, 163), 2)
@@ -149,7 +149,7 @@ S1 = Point[Inducts.get_id("S1")][0]
 S2 = Point[Inducts.get_id("S2")][0]
 S3 = Point[Inducts.get_id("S3")][0]
 S4 = Point[Inducts.get_id("S4")][0]
-S = [S1, S2, S3, S4]
+S = ["S1", "S2", "S3", "S4"]
 D1 = Point[Inducts.get_id("D1")][0]
 D2 = Point[Inducts.get_id("D2")][0]
 D3 = Point[Inducts.get_id("D3")][0]
@@ -171,11 +171,11 @@ print("Code Starts")
 # while loop
 # sys.exit()
 n = 0
-xy1 =utils.std(D1, S1)
-xy2 = utils.std(D2, S2)
-xy3 = utils.std(D3, S3)
-xy4 = utils.std(D4, S4)
-# xys = [xy1,xy2,xy3,xy4]
+xy1 =utils.std(S1, D1)
+xy2 = utils.std(S2, D2)
+xy3 = utils.std(S3, D3)
+xy4 = utils.std(S4, D4)
+xys = [xy1,xy2,xy3,xy4]
 
 # print(xys)
 # sys.exit()
@@ -196,10 +196,10 @@ while True:
             cc = np.where(markerIds == a[0])
             c = int(cc[0][0])
             s = str(Inducts.get_name(a[0]))
-            variab = utils.find_coordinates(markerCorners, c)
-            (x, y) = variab[0]
+            center= utils.find_coordinates(markerCorners, c)[0]
+            
             cv.putText(frame,
-                       s, (x, y),
+                       s, center,
                        cv.FONT_HERSHEY_PLAIN,
                        1, (255, 0, 255),
                        thickness=1)
@@ -209,6 +209,8 @@ while True:
     #i want cofbot, xy and endpnt
     xy=xys[n]
     endpnt=D[n]
+    cv.circle(frame, xy, 4, (112, 0, 255), -1)
+    cv.circle(frame, endpnt, 4, (34, 112, 255), -1)
     print(cofbot)
     if not Return[n]:
         dist1=utils.dist(cofbot,xy)
@@ -234,17 +236,17 @@ while True:
             if val==2:
                 control(id, 1, direction=1, pwm=279)
                 control(id, 2, direction=1, pwm=100)
-                print('lefffttttttt ppppiiiddddddddddddddd')
+                #print('lefffttttttt ppppiiiddddddddddddddd')
             elif val==1:
                 control(id, 2, direction=1, pwm=279)
                 control(id, 1, direction=1, pwm=100)
-                print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
+                #print('righttttttttttttttttttttt ppppiiiddddddddddddddd')
             control(id, 1, direction=1, pwm=279)
             control(id, 2, direction=1, pwm=290)
 
 
 
-        print('kgklhlvijgl', start,mid)
+        print('kgklhlvijgl', start[n],mid[n])
 
 
 
