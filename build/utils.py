@@ -116,3 +116,13 @@ def find_coordinates(markerCorners, c):
         int(markerCorners[c][0][2][1])
     )
     return [center, left_top_corner, right_bottom_corner]
+
+def pwm_deductor(dist, var_dist):
+    if (var_dist - dist) in range(0, 25):
+        return 60
+    elif (var_dist - dist) in range(40, 150):
+        return 30
+    elif (var_dist - dist) in range(150, 300):
+        return 5
+    else:
+        return 2

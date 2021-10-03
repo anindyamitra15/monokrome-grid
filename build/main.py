@@ -24,6 +24,7 @@ Induct_Dist_Thres = 20
 Bot_Angle_Thres = 10
 Speed_pwm = 400
 Pro_con = 0.5
+Pwm_deduct_thresh = 30  #30 frames == 30*30 == 900pwm deduction -_-
 
 
 def rescaleFrame(frame, scale=1):
@@ -199,15 +200,16 @@ while True:
                 # necessary for finding front-mid of bot
                 right_top = int(markerCorners[c][0][1][0]), int(markerCorners[c][0][1][1])
 
-                fofbot = utils.mid_pt(left_top, right_top) # front of bot
+                fofbot = utils.mid_pt(left_top, right_top)  # front of bot
                 # draws an arrow towards the front from center of bot
                 cv.arrowedLine(frm, cofbot, fofbot, (50, 255, 128), 2)
 
                 # mid gives the mid point of the track
-                mid = utils.std_v(S_cnt, D_cnt) # vertical point of intersection (x1, y2)
+                mid = utils.std_v(S_cnt, D_cnt)  # vertical point of intersection (x1, y2)
 
                 # not finite state approach starts in the master loop
                 # scope 1: bot goes forward stops at mid
+
                 if isVertical and not isReturn:
                     normal = utils.std_v(S_cnt, cofbot)  # point of the foot of perpendicular
                     # show a blue line from cofbot to foot
@@ -219,8 +221,10 @@ while True:
                     # if the bot is on the induct
                     if not forwarded and utils.dist(cofbot, S_cnt) < Induct_Dist_Thres:
                         # instructs the bot to move fwd
-                        control(id, 3, direction=1, pwm=Speed_pwm)
+                        control(id, 3, direction=1, pwm=pwm_b)
                         forwarded = True
+                        var_dist = dist_dest
+
                     # 'X' points of Normal foot and cofbot
                     x2 = cofbot[0]
                     x1 = normal[0]
@@ -230,20 +234,23 @@ while True:
 
                     # scope 1 exitter section
                     if dist_dest < Induct_Dist_Thres:
-                        isVertical = False # now horizontal block executes
+                        isVertical = False  # now horizontal block executes
                         forwarded = False
-                        control(id, 3, direction=0) # stops the bot
+                        control(id, 3, direction=0)  # stops the bot
                         print("Exiting scope 1")
 
                     # PID control begins
                     # PID left side increase bias
                     if (dist_normal > 0):
                         # print("Left higher")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
+                        control(id, 1, pwm=pwm_l + Pro_con * dist_normal)
                     # PID left side decrease bias
                     elif (dist_normal < 0):
                         # print("Left Lower")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
+                        control(id, 1, pwm=pwm_l + Pro_con * dist_normal)
+                    var_dist = var_dist//2
+                    if dist_dest < var_dist:
+                        pwm_l -= Pwm_deduct_thresh  #if not then use pwm_deductor(dist_dest, var_dist) to get pwm_l/instant
 
                 # end of vertical forward locomotion scope
                 # scope 2: bot turns left or right depending on 0 <= n <= 1 or 2 <= n <= 3, bot moves forward to destination and unloads at destination
@@ -273,7 +280,7 @@ while True:
                         elif 2 <= n <= 3:
                             print("Left")
                             control(id, 1, direction=2)
-                        print(angle,dist_normal)
+                        print(angle, dist_normal)
                         if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres: # new threshold
                             print("Bot is forwarded")
                             control(id, 3, direction=1, pwm=Speed_pwm)  # forwards the bot
