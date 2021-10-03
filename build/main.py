@@ -366,14 +366,14 @@ while True:
                     if dist_dest < Induct_Dist_Thres:
                         isReturn = False
                         forwarded = False
+                        pwm_r = Speed_pwm
+                        pwm_l = Speed_pwm
+                        pwm_b = Speed_pwm
                         print("Bot stops")
                         control(id, 3, direction=0, pwm=0)
                         # after bot stops, selector 'n' points to the next bot
                         print(n)
                         n += 1
-                        pwm_r = Speed_pwm
-                        pwm_l = Speed_pwm
-                        pwm_b = Speed_pwm
                         print("goes to ")
                         print(n)
                 # end of vertical return locomotion scope
