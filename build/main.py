@@ -21,7 +21,7 @@ parameters = cv.aruco.DetectorParameters_create()
 
 # Globals
 Induct_Dist_Thres = 20
-Bot_Angle_Thres = 20
+Bot_Angle_Thres = 10
 Speed_pwm = 400
 Pro_con = 0.5
 
@@ -226,23 +226,23 @@ while True:
                     x1 = normal[0]
                     dist_normal = x2 - x1  # normal distance of bot from the track in x axis with sign
                     # dumps the value
-                    print(dist_normal)
+                    # print(dist_normal)
 
-                    # scope exitter section
+                    # scope 1 exitter section
                     if dist_dest < Induct_Dist_Thres:
                         isVertical = False # now horizontal block executes
                         forwarded = False
                         control(id, 3, direction=0) # stops the bot
-                        print("Bot turns, exiting scope 1")
+                        print("Exiting scope 1")
 
                     # PID control begins
                     # PID left side increase bias
                     if (dist_normal > 0):
-                        print("Left higher")
+                        # print("Left higher")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
                     # PID left side decrease bias
                     elif (dist_normal < 0):
-                        print("Left Lower")
+                        # print("Left Lower")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
 
                 # end of vertical forward locomotion scope
@@ -258,24 +258,28 @@ while True:
                     y1 = normal[1]
                     dist_normal = y2 - y1  # normal distance of bot from the track in y axis with sign
                     # dumps the value
-                    print(dist_normal)
+                    # print(dist_normal)
 
                     # if the bot is on mid
                     if not forwarded and utils.dist(cofbot, mid) < Induct_Dist_Thres:
                         # if the bot turned right and is ready to move fwd
-                        if dist_normal < 100: # new threshold
+
+                        #start turning the bot to the right for 0 <= n <= 1
+                        print("Turning")
+                        control(id, 3, direction=1, pwm=int(Speed_pwm//1.5))
+                        if 0 <= n <= 1:
+                            control(id, 2, direction=2)
+                            print("Right")
+                        elif 2 <= n <= 3:
+                            print("Left")
+                            control(id, 1, direction=2)
+                        print(angle,dist_normal)
+                        if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres: # new threshold
                             print("Bot is forwarded")
                             control(id, 3, direction=1, pwm=Speed_pwm)  # forwards the bot
                             forwarded = True
 
-                        #start turning the bot to the right for 0 <= n <= 1
-                        control(id, 3, direction=1, pwm=int(Speed_pwm//1.5))
-                        if 0 <= n <= 1:
-                            control(id, 2, direction=2)
-                        elif 2 <= n <= 3:
-                            control(id, 1, direction=2)
-
-                    # scope exitter section
+                    # scope 2 exitter section
                     if dist_dest < Induct_Dist_Thres:
                         isReturn = True
                         forwarded = False
@@ -285,11 +289,11 @@ while True:
                     # PID control begins
                     # PID left side increase bias
                     if (dist_normal > 0):
-                        print("Left higher")
+                        # print("Left higher")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
                     # PID left side decrease bias
                     elif (dist_normal < 0):
-                        print("Left Lower")
+                        # print("Left Lower")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
 
                 # end of horizontal forward locomotion scope
@@ -304,7 +308,7 @@ while True:
                     y1 = normal[1]
                     dist_normal = y2 - y1  # normal distance of bot from the track in y axis with sign
                     # dumps the value
-                    print(dist_normal)
+                    # print(dist_normal)
 
                     # if the bot is on Destination
                     if not forwarded and utils.dist(cofbot, D_cnt) < Induct_Dist_Thres:
@@ -312,7 +316,7 @@ while True:
                         control(id, 3, direction=2, pwm=Speed_pwm)  # backward moves the bot
                         forwarded = True # backwarded
 
-                    # scope exitter section
+                    # scope 3 exitter section
                     if dist_dest < Induct_Dist_Thres:
                         isVertical = True
                         forwarded = False
@@ -321,25 +325,49 @@ while True:
                     # PID control begins
                     # PID left side increase bias
                     if (dist_normal > 0):
-                        print("Left higher")
+                        # print("Left higher")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
                     # PID left side decrease bias
                     elif (dist_normal < 0):
-                        print("Left Lower")
+                        # print("Left Lower")
                         control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
 
                 # end of horizontal return locomotion scope
                 # scope 4: bot turns right 90 for 0 <= n <= 1 or bot turns left 90 for 2 <= n <= 3
                 # and stops at Source Induct
+                # and shifts control to next bot
+                # and initialises globals and flags
                 elif isVertical and isReturn:
                     normal = utils.std_v(S_cnt, cofbot)
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
                     dist_dest = utils.dist(cofbot, S_cnt)
                     _, angle = utils.anglechecker(cofbot, fofbot, S_cnt)
+                    # if the bot is on mid
+                    if not forwarded and utils.dist(cofbot, mid) < Induct_Dist_Thres:
+                        # if the bot turned right and is ready to move fwd
+
+                        #start turning the bot to the right for 0 <= n <= 1
+                        print("Turning")
+                        control(id, 3, direction=1, pwm=int(Speed_pwm // 1.5))
+                        if 0 <= n <= 1:
+                            control(id, 2, direction=2)
+                            print("Right")
+                        elif 2 <= n <= 3:
+                            print("Left")
+                            control(id, 1, direction=2)
+                        print(angle, dist_normal)
+                        if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres:  # new threshold
+                            print("Bot is forwarded")
+                            control(id, 3, direction=1, pwm=Speed_pwm)  # forwards the bot
+                            forwarded = True
+
                     # additional logic inside!!!
+                    # scope 4 exiter section
                     if dist_dest < Induct_Dist_Thres:
                         isReturn = False
+                        forwarded = False
                         print("Bot stops")
+                        control(id, 3, direction=0, pwm=0)
                         # after bot stops, selector 'n' points to the next bot
                         print(n)
                         n += 1

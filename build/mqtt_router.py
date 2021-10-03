@@ -96,14 +96,15 @@ def control(chip_id: int, motor: int, **kwargs):
                         (value in range(enums.directions.Stop, enums.directions.Reverse + 1)):
                     direction = int(value)
                     client.publish(topic + '/' + str(cred.topicPub.DIRECTION), payload=direction)
-                    print("Dir: " + str(direction) + " to " + str(motor))
+                    # print("Dir: " + str(direction) + " to " + str(motor))
                 if (key == 'pwm') and \
                         (value in range(0, 1024)):
                     pwm = int(value)
                     client.publish(topic + '/' + str(cred.topicPub.PWM), payload=pwm)
-                    print("PWM: " + str(pwm) + " to " + str(motor))
+                    # print("PWM: " + str(pwm) + " to " + str(motor))
     else:
-        print("Bot absent")
+        pass
+        # print("Bot absent")
 
 
 def on_exit():
