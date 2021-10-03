@@ -1,6 +1,8 @@
 import math
 from math import *
 
+from cv2 import PCACompute2
+
 
 def dist(a, b):
     # two tuples/ coordinates
@@ -33,33 +35,62 @@ def pid(cofbot, dest):
     else:
         return 3
 
-
 def anglechecker(centre, pt1, edge):
+    (x1, y1) = pt1
+    (x2, y2) = edge
     (x, y) = centre
-    x1, y1 = pt1[0], pt1[1]
-    x2, y2 = edge[0], edge[1]
-    if x == x1:
-        m1 = 1
+    if x1 != x:
+        m1 = (y1 - y)/(x1 - x)
     else:
-        m1 = (y - y1) / (x - x1)
-    if x == x2:
-        m2 = 1
+        m1 = None # implies slope is 90 deg
+    if x2 != x:
+        m2 = (y2 - y)/(x2 - x)
     else:
-        m2 = (y - y2) / (x - x2)
-    # print('m1:',m1,'m2:', m2)
-    # if (m1 == 1 and abs(m2) == 0) or (m2 == 1 and abs(m1) == 0):
-    if m1*m2 == -1:
-        theta = 90
+        m2 = None
+    angle: int
+    if m1 is None or m2 is None:
+        if m1 is None and m2 is None:
+            angle = 0
+        elif m1 is None:
+            rad = atan(m2)
+            angle = round(90 - degrees(rad))
+        elif m2 is None:
+            rad = atan(m1)
+            angle = round(90 - degrees(rad))
     else:
         rad = atan((m2 - m1) / (1 + (m1 * m2)))
-        theta = round(degrees(rad))
+        angle = round(degrees(rad))
+    if angle > 90:
+        angle = 180 - angle
+    return False, angle
 
-    # print(theta)
-    # if theta<0:
-    #     theta=-(theta)
-    if theta <= 5:
-        return True, theta
-    return False, theta
+
+# def anglechecker(centre, pt1, edge):
+#     (x, y) = centre
+#     (x1, y1) = pt1
+#     x2, y2 = edge[0], edge[1]
+#     if x == x1:
+#         m1 = 1
+#     else:
+#         m1 = (y - y1) / (x - x1)
+#     if x == x2:
+#         m2 = 1
+#     else:
+#         m2 = (y - y2) / (x - x2)
+#     # print('m1:',m1,'m2:', m2)
+#     # if (m1 == 1 and abs(m2) == 0) or (m2 == 1 and abs(m1) == 0):
+#     if m1*m2 == -1:
+#         theta = 90
+#     else:
+#         rad = atan((m2 - m1) / (1 + (m1 * m2)))
+#         theta = round(degrees(rad))
+
+#     # print(theta)
+#     # if theta<0:
+#     #     theta=-(theta)
+#     if theta <= 5:
+#         return True, theta
+#     return False, theta
 
 
 def checker(dist, dist1):

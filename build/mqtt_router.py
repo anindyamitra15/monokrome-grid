@@ -83,8 +83,7 @@ client.loop_start()  # threaded loop begins
 # Control (publisher) Methods, overloaded
 def control(chip_id: int, motor: int, **kwargs):
     topic = cred.topicPub.PARENT + '/' + str(chip_id) + '/' + str(motor)
-    if chip_id in cred.bots and \
-            motor in range(enums.motors.UNLOADER, enums.motors.MOTOR_BOTH + 1):
+    if motor in range(enums.motors.UNLOADER, enums.motors.MOTOR_BOTH + 1):
         if motor == enums.motors.UNLOADER:
             for key, value in kwargs.items():
                 if (key == 'logic') and value:

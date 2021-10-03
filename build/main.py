@@ -1,3 +1,4 @@
+from math import dist
 import cv2 as cv
 import sys
 import numpy as np
@@ -20,11 +21,14 @@ dictionary = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_1000)
 parameters = cv.aruco.DetectorParameters_create()
 
 # Globals
-Induct_Dist_Thres = 20
-Bot_Angle_Thres = 10
-Speed_pwm = 400
-Pro_con = 0.5
-Pwm_deduct_thresh = 30  #30 frames == 30*30 == 900pwm deduction -_-
+Induct_Dist_Thres = 50
+Bot_Angle_Thres = 20
+Speed_pwm = 300
+turning_speed = 220
+pid_k = 2
+comp_factor = 200
+offset = 200
+# Pwm_deduct_thresh = 100  #30 frames == 30*30 == 900pwm deduction -_-
 
 
 def rescaleFrame(frame, scale=1):
@@ -38,7 +42,6 @@ def rescaleFrame(frame, scale=1):
 Point = dict()
 # Arena confirmation Loop
 # Loop 1
-# xys = set()
 while True:
     ret, frm = cap.read()
 
@@ -150,33 +153,34 @@ while True:
     cv.aruco.drawDetectedMarkers(frm, markerCorners)
     cv.imshow("Frame", rescaleFrame(frm))
 print("Locations")
-print(Location)  # GGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+print(Location)
 
-# on_exit()
-# sys.exit()
-# flags initialisation
+
+# flags and variable initialisation
 n: int = 0
-err_flag = False
 isVertical = True
 isReturn = False
 forwarded = False
 pwm_r = Speed_pwm
 pwm_l = Speed_pwm
 pwm_b = Speed_pwm
-deduc = 0
+
+
+# ================== main section ===========================
 while True:
     ret, frm = cap.read()
-
+    
     Sx = Inducts.key_list[n]  # ArUco for Source Induct
-    Dx = Inducts.key_list[n + 4]  # ArUco for destination Induct
-    S_cnt = Point[Sx][0]  # center point of source induct
-    D_cnt = Point[Dx][0]  # center point of destination induct
-
     # exit sequence
     if cv.waitKey(1) & 0xff == ord('q') or n >= 4 or Sx not in Location.keys():
         for ids in Bots.val_list:
             control(ids, 3, direction=0, pwm=0)
         break
+
+    
+    Dx = Inducts.key_list[n + 4]  # ArUco for destination Induct
+    S_cnt = Point[Sx][0]  # center point of source induct
+    D_cnt = Point[Dx][0]  # center point of destination induct
     id = Location[Sx]  # get the bot Id placed on the particular source induct
     num = Bots.get_num(id)  # ArUco number of that bot
 
@@ -210,79 +214,66 @@ while True:
 
                 # not finite state approach starts in the master loop
                 # scope 1: bot goes forward stops at mid
-
                 if isVertical and not isReturn:
+                    dest_pt = mid
                     normal = utils.std_v(S_cnt, cofbot)  # point of the foot of perpendicular
                     # show a blue line from cofbot to foot
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
 
-                    dist_dest = utils.dist(cofbot, mid)  # dist. from bot to turn point
+                    dist_dest = utils.dist(cofbot, dest_pt)  # dist. from bot to turn point
+
                     # angle between mid-cofbot-fofbot
-                    _, angle = utils.anglechecker(cofbot, fofbot, mid)
-                    # if the bot is on the induct
+                    _, angle = utils.anglechecker(cofbot, fofbot, dest_pt)
+
+                    # if the bot is on the source induct
                     if not forwarded and utils.dist(cofbot, S_cnt) < Induct_Dist_Thres:
                         # instructs the bot to move fwd
                         control(id, 3, direction=1, pwm=pwm_b)
                         forwarded = True
-                        var_dist = dist_dest
-
-                    # 'X' points of Normal foot and cofbot
-                    x2 = cofbot[0]
-                    x1 = normal[0]
-                    dist_normal = x2 - x1  # normal distance of bot from the track in x axis with sign
-                    # dumps the value
-                    # print(dist_normal)
 
                     # scope 1 exitter section
-                    if dist_dest < Induct_Dist_Thres:
+                    if dist_dest < Induct_Dist_Thres: # works
                         isVertical = False  # now horizontal block executes
                         forwarded = False
                         control(id, 3, direction=0)  # stops the bot
                         print("Exiting scope 1")
 
+                    # normal distance of bot from the track in x axis with sign
+                    dist_normal = cofbot[0] - normal[0]
+
                     # PID control begins
-                    # PID left side increase bias
-                    else:
-                        deduc = utils.pwm_deductor(dist_dest, var_dist)  # if not then use pwm_deductor(dist_dest, var_dist) to get pwm_l/instant
-                        pwm_l = pwm_l - deduc
-                        if dist_normal > 0:
-                            # print("Left higher")
-                            control(id, 1, pwm=pwm_l)  #pwm_l + Pro_con * dist_normal
-                        # PID left side decrease bias
-                        elif dist_normal < 0:
-                            # print("Left Lower")
-                            control(id, 1, pwm=pwm_l)    #pwm_l + Pro_con * dist_normal
-                        var_dist = var_dist//2
+                    #  PID left side bias
+                    # if Bot is not on line, PID left side bias
+                    if abs(dist_normal) > 0 or abs(angle) > 0:
+                        control(id, 1, pwm= pwm_l + pid_k*dist_normal)
 
                 # end of vertical forward locomotion scope
-                # scope 2: bot turns left or right depending on 0 <= n <= 1 or 2 <= n <= 3, bot moves forward to destination and unloads at destination
+# scope 2: bot turns left or right depending on 0 <= n <= 1 or 2 <= n <= 3, bot moves forward to destination and unloads at destination
                 elif not isVertical and not isReturn:
+                    dest_pt = D_cnt
                     normal = utils.std_h(D_cnt, cofbot) # point of the foot of perpendicular
                     # show a blue line from cofbot to foot
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
-                    dist_dest = utils.dist(cofbot, D_cnt)  # dist. from bot to Destination
-                    _, angle = utils.anglechecker(cofbot, fofbot, D_cnt)
+                    dist_dest = utils.dist(cofbot, dest_pt)  # dist. from bot to Destination
+                    _, angle = utils.anglechecker(cofbot, fofbot, dest_pt)
 
-                    y2 = cofbot[1]
-                    y1 = normal[1]
-                    dist_normal = y2 - y1  # normal distance of bot from the track in y axis with sign
+                    # normal distance of bot from the track in y axis with sign
+                    dist_normal = cofbot[1] - normal[1]
                     # dumps the value
                     # print(dist_normal)
 
-                    # if the bot is on mid
+                    # if the bot is on mid induct
                     if not forwarded and utils.dist(cofbot, mid) < Induct_Dist_Thres:
-                        # if the bot turned right and is ready to move fwd
-
                         #start turning the bot to the right for 0 <= n <= 1
                         print("Turning")
-                        control(id, 3, direction=1, pwm=int(Speed_pwm//1.5))
+                        control(id, 3, direction=1, pwm=turning_speed)
                         if 0 <= n <= 1:
-                            control(id, 2, direction=2)
                             print("Right")
+                            control(id, 2, direction=2)
                         elif 2 <= n <= 3:
                             print("Left")
                             control(id, 1, direction=2)
-                        print(angle, dist_normal)
+                        # if the bot turned right and is ready to move fwd
                         if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres: # new threshold
                             print("Bot is forwarded")
                             control(id, 3, direction=1, pwm=Speed_pwm)  # forwards the bot
@@ -296,30 +287,24 @@ while True:
                         print("End of scope 2")
 
                     # PID control begins
-                    # PID left side increase bias
-                    if (dist_normal > 0):
-                        # print("Left higher")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
-                    # PID left side decrease bias
-                    elif (dist_normal < 0):
-                        # print("Left Lower")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
+                    # PID left side bias
+                    if abs(dist_normal) > 0 or abs(angle) > 0:
+                        control(id, 1, pwm=pwm_l + pid_k * dist_normal)
 
                 # end of horizontal forward locomotion scope
-                # scope 3: bot moves backward, upto mid and stops at mid
+# scope 3: bot moves backward, upto mid and stops at mid
                 elif not isVertical and isReturn:
                     normal = utils.std_h(D_cnt, cofbot)
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
                     dist_dest = utils.dist(cofbot, mid)
                     _, angle = utils.anglechecker(cofbot, fofbot, mid)
 
-                    y2 = cofbot[1]
-                    y1 = normal[1]
-                    dist_normal = y2 - y1  # normal distance of bot from the track in y axis with sign
+                    # normal distance of bot from the track in y axis with sign
+                    dist_normal = cofbot[1] - normal[1]
                     # dumps the value
                     # print(dist_normal)
 
-                    # if the bot is on Destination
+                    # if the bot is on D_cnt
                     if not forwarded and utils.dist(cofbot, D_cnt) < Induct_Dist_Thres:
                         # if the bot turned right and is ready to move fwd
                         control(id, 3, direction=2, pwm=Speed_pwm)  # backward moves the bot
@@ -332,20 +317,16 @@ while True:
                         control(id, 3, direction=0)
 
                     # PID control begins
-                    # PID left side increase bias
-                    if (dist_normal > 0):
+                    # PID left side bias
+                    if abs(dist_normal) > 0 or abs(angle) > 0:
                         # print("Left higher")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
-                    # PID left side decrease bias
-                    elif (dist_normal < 0):
-                        # print("Left Lower")
-                        control(id, 1, pwm=Speed_pwm + Pro_con * dist_normal)
+                        control(id, 1, pwm=pwm_l + pid_k * dist_normal)
 
                 # end of horizontal return locomotion scope
-                # scope 4: bot turns right 90 for 0 <= n <= 1 or bot turns left 90 for 2 <= n <= 3
-                # and stops at Source Induct
-                # and shifts control to next bot
-                # and initialises globals and flags
+# scope 4: bot turns right 90 for 0 <= n <= 1 or bot turns left 90 for 2 <= n <= 3
+# and stops at Source Induct
+# and shifts control to next bot
+# and re-initialises globals and flags
                 elif isVertical and isReturn:
                     normal = utils.std_v(S_cnt, cofbot)
                     cv.line(frm, cofbot, normal, (255, 0, 0), 2)
@@ -357,7 +338,7 @@ while True:
 
                         #start turning the bot to the right for 0 <= n <= 1
                         print("Turning")
-                        control(id, 3, direction=1, pwm=int(Speed_pwm // 1.5))
+                        control(id, 3, direction=1, pwm=turning_speed)
                         if 0 <= n <= 1:
                             control(id, 2, direction=2)
                             print("Right")
@@ -365,7 +346,9 @@ while True:
                             print("Left")
                             control(id, 1, direction=2)
                         print(angle, dist_normal)
-                        if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres:  # new threshold
+
+                        # if bot is correctly point to the destination point
+                        if abs(angle) < Bot_Angle_Thres and abs(dist_normal) < Induct_Dist_Thres:
                             print("Bot is forwarded")
                             control(id, 3, direction=1, pwm=Speed_pwm)  # forwards the bot
                             forwarded = True
@@ -385,6 +368,9 @@ while True:
                         n += 1
                         print("goes to ")
                         print(n)
+
+                    if abs(dist_normal) > 0 or abs(angle) > 0:
+                        control(id, 1, pwm=pwm_l + pid_k * dist_normal)
                 # end of vertical return locomotion scope
 
     cv.aruco.drawDetectedMarkers(frm, markerCorners)
