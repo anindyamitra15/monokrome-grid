@@ -163,6 +163,7 @@ forwarded = False
 pwm_r = Speed_pwm
 pwm_l = Speed_pwm
 pwm_b = Speed_pwm
+deduc = 0
 while True:
     ret, frm = cap.read()
 
@@ -241,16 +242,17 @@ while True:
 
                     # PID control begins
                     # PID left side increase bias
-                    if (dist_normal > 0):
-                        # print("Left higher")
-                        control(id, 1, pwm=pwm_l + Pro_con * dist_normal)
-                    # PID left side decrease bias
-                    elif (dist_normal < 0):
-                        # print("Left Lower")
-                        control(id, 1, pwm=pwm_l + Pro_con * dist_normal)
-                    var_dist = var_dist//2
-                    if dist_dest < var_dist:
-                        pwm_l -= Pwm_deduct_thresh  #if not then use pwm_deductor(dist_dest, var_dist) to get pwm_l/instant
+                    else:
+                        deduc = utils.pwm_deductor(dist_dest, var_dist)  # if not then use pwm_deductor(dist_dest, var_dist) to get pwm_l/instant
+                        pwm_l = pwm_l - deduc
+                        if dist_normal > 0:
+                            # print("Left higher")
+                            control(id, 1, pwm=pwm_l)  #pwm_l + Pro_con * dist_normal
+                        # PID left side decrease bias
+                        elif dist_normal < 0:
+                            # print("Left Lower")
+                            control(id, 1, pwm=pwm_l)    #pwm_l + Pro_con * dist_normal
+                        var_dist = var_dist//2
 
                 # end of vertical forward locomotion scope
                 # scope 2: bot turns left or right depending on 0 <= n <= 1 or 2 <= n <= 3, bot moves forward to destination and unloads at destination

@@ -123,6 +123,6 @@ def pwm_deductor(dist, var_dist):
     elif (var_dist - dist) in range(40, 150):
         return 30
     elif (var_dist - dist) in range(150, 300):
-        return 5
+        return 7
     else:
         return 2
