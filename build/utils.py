@@ -47,7 +47,8 @@ def anglechecker(centre, pt1, edge):
     else:
         m2 = (y - y2) / (x - x2)
     # print('m1:',m1,'m2:', m2)
-    if (m1 == 1 and abs(m2) == 0) or (m2 == 1 and abs(m1) == 0):
+    # if (m1 == 1 and abs(m2) == 0) or (m2 == 1 and abs(m1) == 0):
+    if m1*m2 == -1:
         theta = 90
     else:
         rad = atan((m2 - m1) / (1 + (m1 * m2)))
