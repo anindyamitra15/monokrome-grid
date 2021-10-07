@@ -40,31 +40,34 @@ def anglechecker(centre, pt1, edge):
     (x2, y2) = edge
     (x, y) = centre
     if x1 != x:
-        m1 = (y1 - y)/(x1 - x)
+        m1 = (y1 - y)//(x1 - x)
     else:
         m1 = None # implies slope is 90 deg
     if x2 != x:
-        m2 = (y2 - y)/(x2 - x)
+        m2 = (y2 - y)//(x2 - x)
     else:
         m2 = None
     angle: int
-    if m1 is None or m2 is None:
-        if m1 is None and m2 is None:
-            angle = 0
-        elif m1 is None:
-            rad = atan(m2)
-            angle = round(90 - degrees(rad))
-        elif m2 is None:
-            rad = atan(m1)
-            angle = round(90 - degrees(rad))
+    # if m1 is None or m2 is None:
+    if m1 is None and m2 is None:
+        angle = 0 # lines are parallel
+    elif m1 is None:
+        rad = atan(m2)
+        angle = round(90 - degrees(rad))
+    elif m2 is None:
+        rad = atan(m1)
+        angle = round(90 - degrees(rad))
     else:
-        rad = atan((m2 - m1) / (1 + (m1 * m2)))
-        angle = round(degrees(rad))
-    if angle > 90:
+        if m1*m2 == -1:
+            angle = 90
+        else:
+            rad = atan((m2 - m1) / (1 + (m1 * m2)))
+            angle = round(degrees(rad))
+    if abs(angle) > 90:
         angle = 180 - angle
     return False, angle
 
-
+ 
 # def anglechecker(centre, pt1, edge):
 #     (x, y) = centre
 #     (x1, y1) = pt1
