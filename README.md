@@ -7,7 +7,7 @@
 ├── CMS             Central Monitoring System, object tracking and MQTT client script
 ├── OpenCV-testing  CV testing code, will be added to CMS after successful run
 ├── HSV_Data_Day    Contains the calibration data for the arena in daytime
-├── HSV_Data_Night    Contains the calibration data for the arena at night
+├── HSV_Data_Night  Contains the calibration data for the arena at night
 └── README.md       Contains all the details about the project
 ```
 
