@@ -7,30 +7,33 @@
  * Minimum frequency = 100Hz
  * Maximum frequency = 60000Hz
  */
-#define PWM_FREQ 200    //Hz
-/*MOTOR A*/
+#define PWM_FREQ 120    //Hz
+/*MOTOR L*/
 //Left Motor PWM
-#define A_PWM 12
-/*MOTOR B*/
+#define L_PWM 12 //(D6)
+/*MOTOR R*/
 //Right Motor PWM
-#define B_PWM 13
+#define R_PWM 0 //(D3)
 
 
 /*Two bits for setting the direction*/
-/*MOTOR A*/
+/*MOTOR L*/
 //Out1 connects to Left Motor +ve
-#define A_PLUS 4 //connects to In1
+#define L_PLUS 4 //connects to In1 (D2)
 //Out2 connects to Left Motor -ve
-#define A_MINUS 5 //connects to In2
+#define L_MINUS 5 //connects to In2 (D1)
 
-/*MOTOR B*/
+/*MOTOR R*/
 //Out3 connects to Right Motor +ve
-#define B_PLUS 0 //connects to In3
+#define R_PLUS 13 //connects to In3 (D7)
 //Out4 connects to Right Motor -ve
-#define B_MINUS 14 //connects to In4
+#define R_MINUS 14 //connects to In4 (D5)
 
 /*Servo output pin*/
-#define SERVO_PIN 15
+#define SERVO_PIN 15    //(D8)
+#define UNLOAD_DEGREE 90
+#define SERVO_RESTING_DEGREE 0
+
 /*Onboard LED on ESP8266*/
 #define LED 2
 /**

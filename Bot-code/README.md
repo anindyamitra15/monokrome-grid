@@ -6,6 +6,7 @@ This folder contains all the source codes required for the microcontroller in th
 ├── Grid-3-Bots     Platform IO Source Folder
 |   ├── include     Contains header files for the source code
 |   ├── libs        Contains all the custom libraries (if any)
+|   ├── └── Motor
 |   ├── src
 |   |   └── main.cpp    This is the source code
 |   ├── .gitignore      You know what it is :)

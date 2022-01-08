@@ -1,4 +1,7 @@
-ML-OpenCV/output.mp4
-ML-OpenCV/__pycache__
-ML-OpenCV/.idea
-/.idea/inspectionProfiles/Project_Default.xml
+CMS/*.mp4
+**/__pycache__
+.idea
+**/.idea
+Bot-code/Grid-3-Bots/include/config.h
+HSV_Data_Day.json
+HSV_Data_Night.json
