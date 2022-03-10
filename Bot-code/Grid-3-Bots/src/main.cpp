@@ -14,7 +14,7 @@
 #define TOPIC_SUB "ToBot"
 #define TOPIC_PUB "FromBot"
 #define SLASH String('/')
-/*====Topics Macros====*/
+/*====Topics Macros======*/
 
 /*=======Globals=======*/
 
